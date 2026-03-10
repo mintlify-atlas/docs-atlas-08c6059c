@@ -1,0 +1,357 @@
+---
+title: "Internationalization"
+description: "Use OmniSearches in your preferred language with full i18n support"
+---
+
+## Overview
+
+OmniSearches provides comprehensive internationalization (i18n) support, allowing users to interact with the application in their preferred language. The interface automatically adapts to display translated text while maintaining full search functionality across all supported languages.
+
+<Info>
+Currently supported languages: **English**, **Simplified Chinese (简体中文)**, and **Traditional Chinese (繁體中文)**
+</Info>
+
+## Supported Languages
+
+<CardGroup cols={3}>
+  <Card title="English" icon="flag-usa">
+    Full UI and search support
+  </Card>
+  <Card title="简体中文" icon="flag">
+    Simplified Chinese
+  </Card>
+  <Card title="繁體中文" icon="flag">
+    Traditional Chinese
+  </Card>
+</CardGroup>
+
+## How It Works
+
+OmniSearches uses `i18next` and `react-i18next` for internationalization:
+
+1. **Language Detection**: Automatically detects browser language on first visit
+2. **Persistent Preference**: Stores language choice in localStorage
+3. **Dynamic Translation**: All UI elements update instantly when language changes
+4. **Search Integration**: Can request search results in specific languages
+
+## Changing Language
+
+### Via Web Interface
+
+1. Look for the **globe icon** (🌐) in the navigation bar
+2. Click to open the language selector dropdown
+3. Select your preferred language from the list
+4. The interface updates immediately
+
+<Tip>
+Your language preference is saved automatically and will persist across sessions.
+</Tip>
+
+### Programmatically
+
+```typescript Using the Language Context
+import { useLanguage } from '@/contexts/LanguageContext';
+
+function MyComponent() {
+  const { currentLanguage, changeLanguage, languages } = useLanguage();
+
+  return (
+    <div>
+      <p>Current: {currentLanguage}</p>
+      <button onClick={() => changeLanguage('zh-CN')}>
+        Switch to Simplified Chinese
+      </button>
+    </div>
+  );
+}
+```
+
+## Available Language Codes
+
+| Language | Code | Label |
+|----------|------|-------|
+| English | `en` | English |
+| Simplified Chinese | `zh-CN` | 简体中文 |
+| Traditional Chinese | `zh-HK` | 繁體中文 |
+
+## Translation Coverage
+
+All major UI components are fully translated:
+
+<AccordionGroup>
+  <Accordion title="Navigation & Headers" icon="bars">
+    - Page titles and headings
+    - Navigation menu items
+    - Button labels
+  </Accordion>
+  
+  <Accordion title="Search Interface" icon="magnifying-glass">
+    - Search placeholder text
+    - Search mode labels
+    - Search button text
+  </Accordion>
+  
+  <Accordion title="Results Display" icon="list">
+    - Source attribution labels
+    - Related questions headers
+    - Image gallery captions
+  </Accordion>
+  
+  <Accordion title="User Messages" icon="message">
+    - Error messages
+    - Success notifications
+    - Help text and tooltips
+  </Accordion>
+  
+  <Accordion title="Footer Content" icon="footer">
+    - Copyright notices
+    - Attribution text
+    - External links
+  </Accordion>
+</AccordionGroup>
+
+## Language-Specific Search Results
+
+You can request search results in a specific language using the API:
+
+### Via API
+
+```typescript Request in Specific Language
+const response = await fetch('/api/search', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    query: 'Your search query',
+    mode: 'default',
+    language: 'English' // or 'Chinese', 'Spanish', etc.
+  })
+});
+```
+
+### Reasoning Mode
+
+The reasoning endpoint also supports language preferences:
+
+```bash Reasoning in Chinese
+curl "https://api.omnisearches.com/api/reasoning?q=你的问题&language=Chinese"
+```
+
+<Note>
+While the UI is limited to English, Simplified Chinese, and Traditional Chinese, the AI can generate responses in **any language** you specify in the `language` parameter.
+</Note>
+
+## Implementation Details
+
+### Language Context
+
+OmniSearches uses React Context to manage language state globally:
+
+```typescript client/src/contexts/LanguageContext.tsx
+const languages = [
+  { code: 'en', label: 'English' },
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'zh-HK', label: '繁體中文' }
+];
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const { i18n } = useTranslation();
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    setCurrentLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  return (
+    <LanguageContext.Provider value={{ currentLanguage, changeLanguage, languages }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+```
+
+### Language Selector Component
+
+The language selector provides an accessible dropdown interface:
+
+```typescript client/src/components/LanguageSelector.tsx
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Globe, ChevronDown } from 'lucide-react';
+
+export function LanguageSelector() {
+  const { currentLanguage, changeLanguage, languages } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button onClick={() => setIsOpen(!isOpen)}>
+        <Globe className="w-4 h-4" />
+        <span>{languages.find(lang => lang.code === currentLanguage)?.label}</span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+
+      {isOpen && (
+        <div className="dropdown">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => {
+                changeLanguage(lang.code);
+                setIsOpen(false);
+              }}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Translation Files
+
+Translations are organized by language code in the i18n directory:
+
+```
+client/src/i18n/
+├── config.ts          # i18next configuration
+├── locales/
+│   ├── en.json       # English translations
+│   ├── zh-CN.json    # Simplified Chinese
+│   └── zh-HK.json    # Traditional Chinese
+```
+
+### Using Translations
+
+```typescript In Components
+import { useTranslation } from 'react-i18next';
+
+function SearchButton() {
+  const { t } = useTranslation();
+  
+  return (
+    <button>{t('buttons.search')}</button>
+  );
+}
+```
+
+## Adding New Languages
+
+To add support for a new language:
+
+<Steps>
+  <Step title="Create Translation File">
+    Add a new JSON file in `client/src/i18n/locales/`:
+    ```json locales/es.json
+    {
+      "slogan": {
+        "home": "Tu motor de búsqueda con IA"
+      },
+      "buttons": {
+        "search": "Buscar"
+      }
+      // ... more translations
+    }
+    ```
+  </Step>
+  
+  <Step title="Update Language List">
+    Add the language to the context:
+    ```typescript LanguageContext.tsx
+    const languages = [
+      { code: 'en', label: 'English' },
+      { code: 'zh-CN', label: '简体中文' },
+      { code: 'zh-HK', label: '繁體中文' },
+      { code: 'es', label: 'Español' } // New language
+    ];
+    ```
+  </Step>
+  
+  <Step title="Configure i18next">
+    Import the new translations in your i18n config:
+    ```typescript config.ts
+    import es from './locales/es.json';
+
+    i18n.use(initReactI18next).init({
+      resources: {
+        en: { translation: en },
+        'zh-CN': { translation: zhCN },
+        'zh-HK': { translation: zhHK },
+        es: { translation: es }
+      }
+    });
+    ```
+  </Step>
+  
+  <Step title="Test Translation">
+    Switch to the new language and verify all UI elements display correctly.
+  </Step>
+</Steps>
+
+## Browser Language Detection
+
+OmniSearches automatically detects the user's browser language on first visit:
+
+```typescript Automatic Detection
+i18n.use(LanguageDetector).init({
+  detection: {
+    order: ['localStorage', 'navigator'],
+    caches: ['localStorage']
+  }
+});
+```
+
+Detection order:
+1. **localStorage**: Checks for previously saved language preference
+2. **Navigator**: Falls back to browser language setting
+3. **Default**: Uses English if no match found
+
+## Accessibility
+
+The language selector is fully accessible:
+
+- **Keyboard Navigation**: Tab to focus, Enter to select
+- **ARIA Labels**: Proper labeling for screen readers
+- **Visual Indicators**: Clear active state and hover effects
+- **Focus Management**: Dropdown closes on outside click
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Default to User Preference" icon="user">
+    Always respect the user's saved language choice
+  </Card>
+  <Card title="Provide Visual Feedback" icon="eye">
+    Show clear indication of current language
+  </Card>
+  <Card title="Keep Translations Consistent" icon="check">
+    Use the same terms across all UI elements
+  </Card>
+  <Card title="Test All Languages" icon="vial">
+    Verify translations in context, not just text
+  </Card>
+</CardGroup>
+
+## Limitations
+
+<Warning>
+- Right-to-left (RTL) languages are not currently supported
+- Some external content (sources, citations) may not be translated
+- API error messages are in English only
+</Warning>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Search Modes" icon="sliders" href="/features/search-modes">
+    All search modes support multilingual queries
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/search">
+    Specify language in API requests
+  </Card>
+</CardGroup>

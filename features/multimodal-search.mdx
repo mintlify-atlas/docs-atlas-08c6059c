@@ -1,0 +1,294 @@
+---
+title: "Multimodal Search"
+description: "Search with images and text together for more contextual and relevant results"
+---
+
+## Overview
+
+OmniSearches supports multimodal search, allowing you to upload images alongside your text queries. This feature enables visual search scenarios where images provide crucial context that text alone cannot capture.
+
+<Note>
+Multimodal search is available via the POST `/api/search` endpoint and through the web interface using the paperclip icon.
+</Note>
+
+## How It Works
+
+The multimodal search feature combines image and text inputs to provide more contextual results:
+
+1. **Image Upload**: Upload up to 4 images (JPEG, PNG, GIF, or WebP)
+2. **Context Integration**: Images are encoded and sent to Gemini 2.0 Flash
+3. **Combined Analysis**: The AI analyzes both visual and textual information
+4. **Enhanced Results**: Receive answers that consider both image context and your query
+
+<Info>
+Maximum file limit: 4 images per search. Each image is base64-encoded and sent with your query.
+</Info>
+
+## Supported Image Formats
+
+<CardGroup cols={2}>
+  <Card title="JPEG" icon="image">
+    `.jpg`, `.jpeg` - Standard photo format
+  </Card>
+  <Card title="PNG" icon="image">
+    `.png` - Lossless format with transparency
+  </Card>
+  <Card title="GIF" icon="image">
+    `.gif` - Animated or static graphics
+  </Card>
+  <Card title="WebP" icon="image">
+    `.webp` - Modern web format
+  </Card>
+</CardGroup>
+
+## Usage Examples
+
+### Via Web Interface
+
+1. Navigate to the OmniSearches homepage
+2. Click the **paperclip icon** (📎) in the search bar
+3. Select up to 4 images from your device
+4. Preview your uploaded images
+5. Enter your text query
+6. Click **Search** to get results
+
+<Tip>
+You can remove individual images from the preview by clicking the X button on each image thumbnail.
+</Tip>
+
+### Via API
+
+Send images as base64-encoded strings in the `user_images` array:
+
+```typescript POST /api/search
+const response = await fetch('/api/search', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    query: 'What type of flower is this?',
+    mode: 'default',
+    user_images: [
+      {
+        data: 'base64_encoded_image_data_here',
+        mimeType: 'image/jpeg'
+      }
+    ]
+  })
+});
+```
+
+### Using Fetch with File Input
+
+```typescript Upload and Search
+async function searchWithImages(query: string, files: File[]) {
+  // Convert files to base64
+  const imagePromises = files.map(file => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        // Remove data URL prefix
+        const data = base64.split(',')[1];
+        resolve({
+          data,
+          mimeType: file.type
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  });
+
+  const user_images = await Promise.all(imagePromises);
+
+  const response = await fetch('/api/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query,
+      mode: 'default',
+      user_images
+    })
+  });
+
+  return response.json();
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Visual Identification" icon="eye">
+    Upload photos of plants, animals, objects, or landmarks to identify them and learn more.
+    
+    **Example**: "What species of bird is this?" + image of a bird
+  </Accordion>
+  
+  <Accordion title="Product Research" icon="cart-shopping">
+    Search for products similar to ones you've photographed or saved.
+    
+    **Example**: "Where can I buy this style of furniture?" + image of furniture
+  </Accordion>
+  
+  <Accordion title="Document Analysis" icon="file-text">
+    Upload screenshots, diagrams, or documents for analysis and explanation.
+    
+    **Example**: "Explain this architecture diagram" + diagram image
+  </Accordion>
+  
+  <Accordion title="Troubleshooting" icon="wrench">
+    Share error messages, UI issues, or hardware problems visually.
+    
+    **Example**: "How do I fix this error?" + screenshot of error
+  </Accordion>
+  
+  <Accordion title="Art & Design" icon="palette">
+    Analyze artwork, design patterns, or creative works for inspiration.
+    
+    **Example**: "What art movement is this?" + image of painting
+  </Accordion>
+</AccordionGroup>
+
+## Image Processing
+
+When you upload images, the following process occurs:
+
+```mermaid
+graph LR
+    A[User Upload] --> B[File Validation]
+    B --> C[Base64 Encoding]
+    C --> D[API Request]
+    D --> E[Gemini 2.0 Flash]
+    E --> F[Image Analysis]
+    F --> G[Combined Response]
+```
+
+### Client-Side Processing
+
+Images are processed entirely in the browser:
+
+```typescript client/src/hooks/useImageUpload.ts
+import { useImageStore } from '@/store/imageStore';
+
+export function useImageUpload() {
+  const { addImage } = useImageStore();
+
+  const handleImageUpload = async (files: File[]) => {
+    // Maximum 4 images
+    if (files.length > 4) {
+      throw new Error('Maximum 4 images allowed');
+    }
+
+    // Convert to base64
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        addImage({
+          id: Math.random().toString(36),
+          data: base64.split(',')[1],
+          mimeType: file.type
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return { handleImageUpload };
+}
+```
+
+### Server-Side Integration
+
+The server includes images in the chat history when creating a Gemini session:
+
+```typescript server/routes.ts (Line 398-423)
+if (user_images && user_images.length > 0) {
+  chat = model.startChat({
+    tools: [{ google_search: {} }],
+    history: [
+      {
+        role: "user",
+        parts: [
+          ...user_images.map((img: UserImage) => ({
+            inlineData: {
+              data: img.data,
+              mimeType: img.mimeType
+            }
+          })),
+          { text: 'Use uploaded images to search for information' }
+        ]
+      }
+    ]
+  });
+}
+```
+
+## Limitations
+
+<Warning>
+- Maximum 4 images per search
+- Each image must be under 10MB
+- Supported formats: JPEG, PNG, GIF, WebP
+- Images are not persisted server-side
+</Warning>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Clear Images" icon="camera">
+    Use high-quality, well-lit images for best results
+  </Card>
+  <Card title="Relevant Context" icon="bullseye">
+    Ensure images directly relate to your text query
+  </Card>
+  <Card title="Descriptive Queries" icon="message">
+    Combine images with clear, descriptive text
+  </Card>
+  <Card title="Appropriate Size" icon="compress">
+    Resize large images to improve upload speed
+  </Card>
+</CardGroup>
+
+## Privacy & Security
+
+<Info>
+Images are processed in real-time and are **not stored** on the server. All image data is:
+- Transmitted securely via HTTPS
+- Processed only for the current search session
+- Discarded after the response is generated
+- Not logged or saved to disk
+</Info>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Upload fails with 'too many files' error">
+    You can only upload 4 images at a time. Remove some images and try again.
+  </Accordion>
+  
+  <Accordion title="'Only image files are allowed' error">
+    Ensure your files are JPEG, PNG, GIF, or WebP format. Other file types are not supported.
+  </Accordion>
+  
+  <Accordion title="Images not appearing in search results">
+    Check that your query references the images. Try rephrasing like "Based on this image..." or "What is shown in this photo?"
+  </Accordion>
+  
+  <Accordion title="Slow upload times">
+    Large images take longer to upload. Consider resizing images to under 2MB for faster uploads.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Search Modes" icon="sliders" href="/features/search-modes">
+    Choose the right mode for your multimodal search
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/search">
+    Complete API documentation for image uploads
+  </Card>
+</CardGroup>

@@ -23,9 +23,11 @@
             "group": "Features",
             "pages": [
               "features/search-modes",
+              "features/multimodal-search",
               "features/image-search",
               "features/reasoning-mode",
-              "features/related-questions"
+              "features/related-questions",
+              "features/internationalization"
             ]
           },
           {
@@ -65,10 +67,12 @@
     "Real-time web search with Google Search integration",
     "Multiple search modes: concise, default, exhaustive, and reasoning",
     "AI-powered answers with source citations",
+    "Multimodal search with image uploads (up to 4 images)",
     "Image search via Wikimedia Commons",
     "Advanced reasoning powered by Deepseek model",
     "Related questions generation",
-    "Follow-up conversation support"
+    "Follow-up conversation support",
+    "Internationalization support (English, Simplified Chinese, Traditional Chinese)"
   ],
   "publicApiSurface": [
     "GET /api/search - Perform AI-powered search with grounding",

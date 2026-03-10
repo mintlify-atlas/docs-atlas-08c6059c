@@ -35,9 +35,11 @@
             "group": "Features",
             "pages": [
               "features/search-modes",
+              "features/multimodal-search",
               "features/image-search",
               "features/reasoning-mode",
-              "features/related-questions"
+              "features/related-questions",
+              "features/internationalization"
             ]
           },
           {
