@@ -1,0 +1,445 @@
+---
+title: 'Image Search'
+description: 'How OmniSearches automatically includes relevant images from Wikimedia Commons in search results'
+icon: 'image'
+---
+
+OmniSearches automatically enriches search results with relevant images fetched from Wikimedia Commons, providing visual context for queries about places, concepts, and topics.
+
+## Overview
+
+When you search for topics that benefit from visual representation, OmniSearches includes an image gallery sourced from Wikimedia Commons. This feature is available in **Default**, **Exhaustive**, and **Reasoning** modes.
+
+<Info>
+  Image galleries are automatically generated when the AI determines that visual content would enhance the response, particularly for geographical, historical, or conceptual queries.
+</Info>
+
+## How It Works
+
+<Steps>
+  <Step title="AI Selection">
+    The AI model determines when images would be valuable and includes image references in its response:
+    
+    ```
+    IMAGES:
+    1. [Eiffel Tower][wikipedia][Iconic iron lattice tower in Paris][Eiffel Tower at sunset]
+    2. [Louvre Museum][wikipedia][World's largest art museum][The Louvre pyramid entrance]
+    ...
+    ```
+  </Step>
+
+  <Step title="Image Fetching">
+    The server processes these references and fetches actual image URLs from Wikimedia Commons API:
+    
+    ```typescript
+    const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${searchQuery}&gsrlimit=1&prop=imageinfo&iiprop=url|size&iiurlwidth=400&maxage=3600&smaxage=3600&format=json&origin=*`;
+    ```
+  </Step>
+
+  <Step title="Gallery Rendering">
+    Images are displayed in a responsive grid gallery with captions and full-screen preview capabilities.
+  </Step>
+</Steps>
+
+## Image Format Specification
+
+The AI generates image references in a specific format:
+
+```
+[Search Title][Source][Caption][Alt Text]
+```
+
+<ParamField path="Search Title" type="string" required>
+  The search query used to find the image on Wikimedia Commons
+</ParamField>
+
+<ParamField path="Source" type="string" default="wikipedia">
+  The image source (currently supports `wikipedia`, `pexels`, `unsplash`, `pixabay`)
+</ParamField>
+
+<ParamField path="Caption" type="string" required>
+  Description displayed below the image
+</ParamField>
+
+<ParamField path="Alt Text" type="string" required>
+  Accessibility text for screen readers
+</ParamField>
+
+## Wikimedia Commons Integration
+
+The image fetching system uses the Wikimedia Commons API to retrieve high-quality, freely-licensed images:
+
+```typescript
+// From server/routes.ts and client/src/lib/ImageUtils.ts
+
+export async function getImageUrlFromSource({ 
+  searchTitle, 
+  source, 
+  caption, 
+  alt 
+}: ImageSource): Promise<string> {
+  const sourceType = source.split('=')[1]?.toLowerCase() || '';
+  const searchQuery = encodeURIComponent(searchTitle.toLowerCase().trim());
+
+  switch (sourceType) {
+    case 'wikipedia': {
+      const apiUrl = `https://commons.wikimedia.org/w/api.php
+        ?action=query
+        &generator=search
+        &gsrnamespace=6
+        &gsrsearch=${searchQuery}
+        &gsrlimit=1
+        &prop=imageinfo
+        &iiprop=url|size
+        &iiurlwidth=400
+        &maxage=3600
+        &smaxage=3600
+        &format=json
+        &origin=*`;
+      
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      
+      const pages = data.query?.pages || {};
+      const firstPage = Object.values(pages)[0];
+      const imageUrl = firstPage?.imageinfo?.[0]?.thumburl 
+                    || firstPage?.imageinfo?.[0]?.url;
+      
+      return imageUrl || '';
+    }
+    // Other sources...
+  }
+}
+```
+
+<Accordion title="API Parameters Explained">
+  - `action=query`: Perform a query operation
+  - `generator=search`: Generate page list from search results
+  - `gsrnamespace=6`: Search in File namespace (images)
+  - `gsrsearch=...`: The search query
+  - `gsrlimit=1`: Return only the best match
+  - `prop=imageinfo`: Get image information
+  - `iiprop=url|size`: Include URL and size information
+  - `iiurlwidth=400`: Generate 400px wide thumbnail
+  - `maxage=3600`: Cache for 1 hour
+  - `origin=*`: Enable CORS
+</Accordion>
+
+## Image Processing Flow
+
+<Tabs>
+  <Tab title="Server-Side">
+    ### Server Processing
+
+    The server extracts and processes images before sending the response:
+
+    ```typescript
+    // Extract image references from AI response
+    const IMAGES_REGEX = /IMAGES:\s*((?:\d+\.\s*\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)\]\s*\n*)*)/s;
+
+    async function extractAndRemoveRelatedQuestionsAndImages(text: string) {
+      const imageMatches = text.match(IMAGES_REGEX);
+      const images: Array<{ url: string; caption: string; alt: string }> = [];
+      
+      if (imageMatches) {
+        const imageSection = imageMatches[1];
+        const imageLines = imageSection.split('\n').filter(line => line.trim());
+        
+        // Process all images concurrently
+        const imagePromises = imageLines.map(async (line) => {
+          const parts = line.match(/\d+\.\s*\[(.*?)\]\[(.*?)\]\[(.*?)\]\[(.*?)\]/);
+          if (parts) {
+            const [_, searchTitle, source, caption, alt] = parts;
+            const url = await getImageUrlFromSource({ 
+              searchTitle, source, caption, alt 
+            });
+            if (url !== '') {
+              return { url, caption, alt };
+            }
+          }
+          return null;
+        });
+
+        const resolvedImages = await Promise.all(imagePromises);
+        images.push(...resolvedImages.filter(img => img !== null));
+      }
+      
+      return { cleanText, relatedQuestions, images };
+    }
+    ```
+
+    <Note>
+      Images are fetched concurrently using `Promise.all()` for optimal performance.
+    </Note>
+  </Tab>
+
+  <Tab title="Client-Side">
+    ### Gallery Component
+
+    The `ImageGallery` component renders images in a responsive grid:
+
+    ```typescript
+    import { ImageGallery } from '@/components/ImageGallery'
+
+    interface Image {
+      url: string;
+      alt: string;
+      caption?: string;
+    }
+
+    <ImageGallery images={[
+      {
+        url: "https://commons.wikimedia.org/...",
+        alt: "Eiffel Tower at sunset",
+        caption: "Iconic iron lattice tower in Paris"
+      },
+      // More images...
+    ]} />
+    ```
+
+    **Features:**
+    - Responsive grid layout (2-4 columns based on screen size)
+    - Lazy loading with fade-in animation
+    - Show/hide toggle for galleries with 5+ images
+    - Click to view full-screen modal
+    - Hover effects and smooth transitions
+
+    ```typescript
+    // Initial display: 4 images
+    const initialImages = showAll ? images : images.slice(0, 4);
+    const hasMoreImages = images.length > 4;
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {initialImages.map((image, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: index * 0.1 }}
+          onClick={() => setSelectedImage(image)}
+        >
+          <img src={image.url} alt={image.alt} />
+          <p>{image.caption}</p>
+        </motion.div>
+      ))}
+    </div>
+    ```
+  </Tab>
+</Tabs>
+
+## Mode-Specific Behavior
+
+<CardGroup cols={3}>
+  <Card title="Default Mode" icon="message-lines">
+    **4-8 Images**
+    
+    Includes relevant images when appropriate for the query. Shows 4 images initially with option to expand.
+  </Card>
+  
+  <Card title="Exhaustive Mode" icon="telescope">
+    **10+ Images**
+    
+    Comprehensive image galleries with more visual content to support in-depth research.
+  </Card>
+  
+  <Card title="Reasoning Mode" icon="sparkles">
+    **4-8 Images**
+    
+    Strategically selected images based on reasoning analysis of the query.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Concise Mode and Search Mode do not include image galleries to maintain focus on quick, text-based results.
+</Warning>
+
+## Gallery Features
+
+### Responsive Grid Layout
+
+```css
+/* Grid automatically adjusts based on screen size */
+grid-cols-2         /* Mobile: 2 columns */
+sm:grid-cols-3      /* Tablet: 3 columns */
+lg:grid-cols-4      /* Desktop: 4 columns */
+```
+
+### Progressive Disclosure
+
+For galleries with more than 4 images:
+
+<Steps>
+  <Step title="Initial View">
+    Display first 4 images with "Show N more" button
+  </Step>
+  <Step title="Expanded View">
+    Show all images with "Show less" button
+  </Step>
+  <Step title="Full Screen">
+    Click any image to view in full-screen modal with caption
+  </Step>
+</Steps>
+
+### Animations
+
+```typescript
+// Staggered fade-in for each image
+<motion.div
+  initial={{ opacity: 0, scale: 0.95 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: index * 0.1 }}  // 100ms delay between images
+>
+```
+
+### Accessibility Features
+
+<AccordionGroup>
+  <Accordion title="Alt Text">
+    Every image includes descriptive alt text for screen readers:
+    ```html
+    <img alt="Eiffel Tower at sunset" />
+    ```
+  </Accordion>
+
+  <Accordion title="Keyboard Navigation">
+    - Tab through images
+    - Enter/Space to open full-screen view
+    - Escape to close modal
+  </Accordion>
+
+  <Accordion title="ARIA Labels">
+    ```html
+    <div role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <img src="..." />
+      <p id="modal-title">Image caption</p>
+    </div>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Example Response
+
+Here's what a typical image-enhanced search looks like:
+
+<Tabs>
+  <Tab title="User Query">
+    ```
+    Tell me about Paris landmarks
+    ```
+  </Tab>
+
+  <Tab title="AI Response">
+    ```
+    IMAGES:
+    1. [Eiffel Tower][wikipedia][Iconic iron lattice tower built in 1889][Eiffel Tower at sunset]
+    2. [Louvre Museum][wikipedia][World's largest art museum and historic monument][The Louvre pyramid entrance]
+    3. [Arc de Triomphe][wikipedia][Famous monument honoring French soldiers][Arc de Triomphe on the Champs-Élysées]
+    4. [Notre-Dame Cathedral][wikipedia][Medieval Catholic cathedral][Notre-Dame de Paris facade]
+    5. [Sacré-Cœur Basilica][wikipedia][White-domed basilica on Montmartre hill][Sacré-Cœur overlooking Paris]
+
+    ## Paris Landmarks
+
+    Paris is home to some of the world's most iconic landmarks...
+    
+    [Content continues...]
+
+    RELATED_QUESTIONS:
+    1. What is the history of the Eiffel Tower?
+    2. How much time do you need to visit the Louvre?
+    3. What are the best viewpoints in Paris?
+    ```
+  </Tab>
+
+  <Tab title="Rendered Output">
+    The user sees:
+    
+    1. **Image Gallery** (4 images initially)
+       - Grid layout with thumbnails
+       - Captions below each image
+       - Hover effects
+    
+    2. **Show 1 more button** (if 5th image exists)
+    
+    3. **Main Content**
+       - Formatted markdown response
+       - Source citations
+    
+    4. **Related Questions**
+       - Interactive question cards
+  </Tab>
+</Tabs>
+
+## Supported Image Sources
+
+While Wikimedia Commons is the primary source, the system supports:
+
+| Source | Status | API Required |
+|--------|--------|-------------|
+| Wikimedia Commons | ✅ Active | No |
+| Pexels | 🚧 Planned | Yes |
+| Unsplash | 🚧 Planned | Yes |
+| Pixabay | 🚧 Planned | Yes |
+
+<Info>
+  Wikimedia Commons is preferred because it provides high-quality, freely-licensed images without requiring API keys.
+</Info>
+
+## Error Handling
+
+The system gracefully handles image fetch failures:
+
+```typescript
+try {
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+  const imageUrl = extractImageUrl(data);
+  return imageUrl || '';  // Return empty string on failure
+} catch (error) {
+  console.error('Error fetching Wikipedia image:', error);
+  return '';  // Fail silently, don't break the response
+}
+```
+
+<Warning>
+  If an image fails to load, it's silently excluded from the gallery rather than showing a broken image or error.
+</Warning>
+
+## Performance Optimization
+
+### Concurrent Fetching
+
+```typescript
+// All images are fetched in parallel
+const imagePromises = imageLines.map(async (line) => {
+  // Fetch image URL...
+});
+
+const resolvedImages = await Promise.all(imagePromises);
+```
+
+### Caching
+
+Wikimedia API responses are cached for 1 hour:
+
+```
+maxage=3600&smaxage=3600
+```
+
+### Thumbnail Sizing
+
+```
+iiurlwidth=400
+```
+
+Requests 400px wide thumbnails instead of full-resolution images for faster loading.
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Search Modes" icon="sliders" href="/features/search-modes">
+    Learn which modes support image galleries
+  </Card>
+  <Card title="Related Questions" icon="circle-question" href="/features/related-questions">
+    Discover other AI-generated enhancements
+  </Card>
+</CardGroup>

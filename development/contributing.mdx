@@ -1,0 +1,621 @@
+---
+title: Contributing
+description: Guidelines for contributing to OmniSearches development
+---
+
+## Welcome Contributors!
+
+Thank you for your interest in contributing to OmniSearches! This guide will help you get started with development, understand our workflow, and submit your contributions.
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+<AccordionGroup>
+  <Accordion title="Node.js (v18+)">
+    Download from [nodejs.org](https://nodejs.org) or use a version manager like nvm:
+    ```bash
+    nvm install 18
+    nvm use 18
+    ```
+  </Accordion>
+  
+  <Accordion title="npm or yarn">
+    Comes with Node.js. Verify installation:
+    ```bash
+    npm --version
+    ```
+  </Accordion>
+  
+  <Accordion title="Git">
+    Required for version control:
+    ```bash
+    git --version
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### API Keys
+
+You'll need API keys for development:
+
+1. **Google Gemini API Key**
+   - Sign up at [Google AI Studio](https://ai.google.dev/)
+   - Create a new API key
+   - Free tier available
+
+2. **OpenRouter API Key**
+   - Sign up at [OpenRouter](https://openrouter.ai/)
+   - Get API key from dashboard
+   - Free models available (Deepseek)
+
+## Development Setup
+
+### 1. Fork and Clone
+
+```bash
+# Fork the repository on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/OmniSearches.git
+cd OmniSearches
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+This installs all dependencies from `package.json` including:
+- React and related libraries
+- Express.js and backend dependencies
+- TypeScript and build tools
+- UI component libraries
+
+### 3. Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```bash
+# Required API Keys
+GOOGLE_API_KEY=your_google_api_key_here
+REASON_MODEL_API_KEY=your_openrouter_api_key_here
+
+# Optional Configuration
+REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+NODE_ENV=development
+PORT=3000
+
+# Database (if using)
+DATABASE_URL=postgresql://user:password@localhost:5432/omnisearches
+```
+
+<Warning>
+  Never commit your `.env` file! It's already in `.gitignore` to prevent accidental commits.
+</Warning>
+
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+This starts:
+- Express backend on port 3000
+- Vite dev server with HMR
+- Both frontend and backend in one process
+
+### 5. Verify Setup
+
+Open your browser to:
+```
+http://localhost:3000
+```
+
+You should see the OmniSearches home page. Try a search query to verify API integration.
+
+## Project Structure
+
+Understanding the codebase organization:
+
+```
+~/workspace/source/
+├── client/src/
+│   ├── components/     # React components
+│   │   ├── ui/        # shadcn/ui base components
+│   │   └── *.tsx      # Feature components
+│   ├── pages/         # Route pages (Home, Search)
+│   ├── lib/           # Utilities and helpers
+│   ├── store/         # Zustand state stores
+│   ├── contexts/      # React contexts
+│   ├── hooks/         # Custom React hooks
+│   └── i18n/          # Internationalization config
+├── server/
+│   ├── index.ts       # Express server entry
+│   ├── routes.ts      # API route handlers
+│   ├── env.ts         # Environment setup
+│   └── vite.ts        # Vite integration
+├── db/                # Database schema
+└── package.json       # Dependencies & scripts
+```
+
+## Development Workflow
+
+### Making Changes
+
+1. **Create a branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes**
+   - Write clean, readable code
+   - Follow existing code style
+   - Add comments for complex logic
+
+3. **Test your changes**
+   ```bash
+   # Type check
+   npm run check
+   
+   # Manual testing in browser
+   npm run dev
+   ```
+
+4. **Commit your changes**
+   ```bash
+   git add .
+   git commit -m "feat: add descriptive commit message"
+   ```
+
+### Commit Message Convention
+
+We follow conventional commits:
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `style:` - Code style changes (formatting, etc.)
+- `refactor:` - Code refactoring
+- `test:` - Adding or updating tests
+- `chore:` - Maintenance tasks
+
+**Examples:**
+```bash
+git commit -m "feat: add image search functionality"
+git commit -m "fix: resolve search result rendering issue"
+git commit -m "docs: update API documentation"
+```
+
+### Testing
+
+Before submitting:
+
+<Steps>
+  <Step title="Type Check">
+    Run TypeScript compiler:
+    ```bash
+    npm run check
+    ```
+    Fix any type errors before proceeding.
+  </Step>
+  
+  <Step title="Manual Testing">
+    Test your changes in the browser:
+    - Home page loads correctly
+    - Search functionality works
+    - No console errors
+    - UI looks correct on different screen sizes
+  </Step>
+  
+  <Step title="Build Test">
+    Verify production build works:
+    ```bash
+    npm run build
+    npm run start
+    ```
+  </Step>
+</Steps>
+
+## Code Style Guidelines
+
+### TypeScript
+
+- Use TypeScript for all new code
+- Define interfaces for complex objects
+- Avoid `any` types when possible
+- Use type inference where appropriate
+
+**Good:**
+```typescript
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+const formatResults = (results: SearchResult[]): string[] => {
+  return results.map(r => r.title);
+};
+```
+
+**Avoid:**
+```typescript
+const formatResults = (results: any) => {
+  return results.map((r: any) => r.title);
+};
+```
+
+### React Components
+
+- Use functional components with hooks
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+- Use TypeScript for props
+
+**Component Template:**
+```typescript
+import { useState } from 'react';
+
+interface MyComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export function MyComponent({ title, onAction }: MyComponentProps) {
+  const [state, setState] = useState<string>('');
+  
+  return (
+    <div>
+      <h2>{title}</h2>
+      {/* Component content */}
+    </div>
+  );
+}
+```
+
+### CSS/Tailwind
+
+- Use Tailwind utility classes
+- Follow mobile-first responsive design
+- Extract repeated patterns into components
+- Use CSS variables from theme
+
+**Example:**
+```tsx
+<button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+  Click Me
+</button>
+```
+
+### File Naming
+
+- React components: `PascalCase.tsx` (e.g., `SearchInput.tsx`)
+- Utilities/hooks: `camelCase.ts` (e.g., `useImageUpload.tsx`)
+- Pages: `PascalCase.tsx` (e.g., `Home.tsx`, `Search.tsx`)
+- Constants: `UPPER_SNAKE_CASE`
+
+## Adding Features
+
+### New UI Components
+
+1. **Using shadcn/ui**
+   ```bash
+   npx shadcn-ui@latest add [component-name]
+   ```
+   This adds the component to `client/src/components/ui/`
+
+2. **Custom Components**
+   Create in `client/src/components/`:
+   ```typescript
+   // client/src/components/MyFeature.tsx
+   export function MyFeature() {
+     return <div>My Feature</div>;
+   }
+   ```
+
+### New API Endpoints
+
+Add to `server/routes.ts`:
+
+```typescript
+app.get('/api/my-endpoint', async (req, res) => {
+  try {
+    const { param } = req.query;
+    
+    // Your logic here
+    
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('Error:', error);
+    res.status(500).json({
+      message: error.message || 'An error occurred'
+    });
+  }
+});
+```
+
+### State Management
+
+**For UI state (Zustand):**
+```typescript
+// client/src/store/myStore.ts
+import { create } from 'zustand';
+
+interface MyState {
+  value: string;
+  setValue: (value: string) => void;
+}
+
+export const useMyStore = create<MyState>((set) => ({
+  value: '',
+  setValue: (value) => set({ value }),
+}));
+```
+
+**For server state (TanStack Query):**
+```typescript
+// In your component
+import { useQuery } from '@tanstack/react-query';
+
+const { data, isLoading } = useQuery({
+  queryKey: ['my-data'],
+  queryFn: async () => {
+    const response = await fetch('/api/my-endpoint');
+    return response.json();
+  },
+});
+```
+
+## Internationalization
+
+Adding new translations:
+
+1. **Add to English** (`client/public/locales/en/translation.json`):
+   ```json
+   {
+     "myFeature": {
+       "title": "My Feature",
+       "description": "Feature description"
+     }
+   }
+   ```
+
+2. **Add to other languages** (zh, zh-HK, etc.)
+
+3. **Use in components**:
+   ```typescript
+   import { useTranslation } from 'react-i18next';
+   
+   const { t } = useTranslation();
+   
+   return <h1>{t('myFeature.title')}</h1>;
+   ```
+
+## Database Changes
+
+If working with the database:
+
+1. **Update schema** (`db/schema.ts`):
+   ```typescript
+   export const myTable = pgTable('my_table', {
+     id: serial('id').primaryKey(),
+     name: text('name').notNull(),
+   });
+   ```
+
+2. **Push changes**:
+   ```bash
+   npm run db:push
+   ```
+
+## Submitting Your Contribution
+
+### Pull Request Process
+
+1. **Push your branch**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+2. **Create Pull Request**
+   - Go to GitHub repository
+   - Click "New Pull Request"
+   - Select your branch
+   - Fill out the PR template
+
+3. **PR Description Template**
+   ```markdown
+   ## Description
+   Brief description of what this PR does.
+   
+   ## Type of Change
+   - [ ] Bug fix
+   - [ ] New feature
+   - [ ] Breaking change
+   - [ ] Documentation update
+   
+   ## Testing
+   - [ ] Tested locally
+   - [ ] Type checking passes
+   - [ ] No console errors
+   
+   ## Screenshots (if applicable)
+   Add screenshots here
+   
+   ## Related Issues
+   Closes #issue_number
+   ```
+
+4. **Code Review**
+   - Address reviewer feedback
+   - Make requested changes
+   - Push updates to same branch
+
+### PR Guidelines
+
+<Check>
+  - Keep PRs focused and small
+  - Include descriptive commit messages
+  - Update documentation if needed
+  - Test thoroughly before submitting
+  - Respond to review comments promptly
+</Check>
+
+## Common Issues
+
+### TypeScript Errors
+
+**Issue:** Type errors in code
+
+**Solution:**
+```bash
+# Run type checker
+npm run check
+
+# Fix errors shown
+# Add type annotations where needed
+```
+
+### Port Already in Use
+
+**Issue:** Port 3000 is already in use
+
+**Solution:**
+```bash
+# Find and kill process using port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Or change port in .env
+PORT=3001
+```
+
+### API Key Issues
+
+**Issue:** API calls failing with authentication errors
+
+**Solution:**
+- Verify `.env` file exists in root directory
+- Check API keys are correct (no extra spaces)
+- Restart dev server after changing `.env`
+- Ensure environment variables are loaded in `server/env.ts`
+
+### Build Failures
+
+**Issue:** Production build fails
+
+**Solution:**
+```bash
+# Clear build cache
+rm -rf dist/ node_modules/.vite/
+
+# Reinstall dependencies
+rm -rf node_modules/
+npm install
+
+# Try build again
+npm run build
+```
+
+## Development Tips
+
+### Hot Reload
+
+- Frontend changes reload automatically (Vite HMR)
+- Backend changes require server restart
+- To restart server: `Ctrl+C` then `npm run dev`
+
+### Debugging
+
+**Frontend:**
+- Use React DevTools browser extension
+- Console logs in browser DevTools
+- Inspect TanStack Query cache in DevTools
+
+**Backend:**
+- Server logs printed to terminal
+- Add `console.log()` statements
+- Check request/response in Network tab
+
+**API Testing:**
+- Use tools like Postman or Thunder Client
+- Test endpoints directly: `curl http://localhost:3000/api/search?q=test`
+
+### Performance Profiling
+
+```typescript
+// React profiling
+import { Profiler } from 'react';
+
+<Profiler id="MyComponent" onRender={(id, phase, actualDuration) => {
+  console.log({ id, phase, actualDuration });
+}}>
+  <MyComponent />
+</Profiler>
+```
+
+## Resources
+
+### Documentation
+
+- [React Docs](https://react.dev)
+- [Express.js Guide](https://expressjs.com)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs)
+- [Tailwind CSS](https://tailwindcss.com)
+- [Vite Guide](https://vitejs.dev)
+- [Gemini API Docs](https://ai.google.dev/docs)
+
+### Component Libraries
+
+- [shadcn/ui](https://ui.shadcn.com)
+- [Radix UI](https://www.radix-ui.com)
+- [Lucide Icons](https://lucide.dev)
+
+### Community
+
+- GitHub Issues - Report bugs or request features
+- GitHub Discussions - Ask questions and share ideas
+
+## Code of Conduct
+
+### Be Respectful
+
+- Treat all contributors with respect
+- Welcome newcomers and help them learn
+- Provide constructive feedback
+- Focus on the code, not the person
+
+### Be Professional
+
+- Use clear, professional language
+- Stay on topic in discussions
+- Respect different opinions and approaches
+- Credit others for their contributions
+
+### Be Collaborative
+
+- Share knowledge and help others
+- Ask questions when unsure
+- Review PRs constructively
+- Celebrate successes together
+
+## Recognition
+
+Contributors are recognized in:
+- GitHub contribution graph
+- Project README (significant contributions)
+- Release notes
+
+Thank you for contributing to OmniSearches! 🎉
+
+## Questions?
+
+If you have questions:
+1. Check existing documentation
+2. Search GitHub issues
+3. Open a new issue with the "question" label
+4. Join community discussions
+
+Happy coding! 🚀

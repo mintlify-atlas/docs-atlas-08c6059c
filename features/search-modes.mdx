@@ -1,0 +1,347 @@
+---
+title: 'Search Modes'
+description: 'Understand the five different search modes in OmniSearches and when to use each one'
+icon: 'sliders'
+---
+
+OmniSearches offers five distinct search modes, each optimized for different types of queries and use cases. Each mode uses Google's Gemini 2.0 Flash model with customized parameters to deliver the best results.
+
+## Available Modes
+
+<CardGroup cols={2}>
+  <Card title="Concise Mode" icon="message">
+    Quick, direct answers with minimal detail
+  </Card>
+  <Card title="Default Mode" icon="message-lines">
+    Balanced responses with comprehensive information
+  </Card>
+  <Card title="Exhaustive Mode" icon="telescope">
+    Deep, thorough research with extensive detail
+  </Card>
+  <Card title="Search Mode" icon="magnifying-glass">
+    URL-focused results for finding specific resources
+  </Card>
+  <Card title="Reasoning Mode" icon="sparkles">
+    Advanced analysis with Deepseek reasoning integration
+  </Card>
+</CardGroup>
+
+## Mode Specifications
+
+<Tabs>
+  <Tab title="Concise">
+    ### Concise Mode
+    
+    Perfect for quick answers when you need information fast without extensive details.
+
+    **Model Configuration:**
+    ```typescript
+    {
+      model: "gemini-2.0-flash",
+      temperature: 0.1,      // Very low for consistent, focused responses
+      topP: 1,               // Full probability mass
+      topK: 1,               // Single most likely token
+      maxOutputTokens: 150   // Limited output for brevity
+    }
+    ```
+
+    **Best For:**
+    - Quick facts and definitions
+    - Simple yes/no questions
+    - Brief explanations
+    - Fast information lookup
+
+    **Example Queries:**
+    - "What is the capital of France?"
+    - "When was Python created?"
+    - "Netflix login"
+
+    <Note>
+      Concise mode prioritizes speed and brevity over comprehensive detail. Responses are limited to 150 tokens.
+    </Note>
+  </Tab>
+
+  <Tab title="Default">
+    ### Default Mode
+    
+    The balanced option that provides comprehensive information with good depth while maintaining readability.
+
+    **Model Configuration:**
+    ```typescript
+    {
+      model: "gemini-2.0-flash",
+      temperature: 1.2,      // Higher for creative, diverse responses
+      topP: 0.95,            // Top 95% probability mass
+      topK: 40,              // Consider top 40 tokens
+      maxOutputTokens: 65536 // Full output capacity
+    }
+    ```
+
+    **Capabilities:**
+    - **Search Mode**: For keyword-based queries finding specific websites (≥5 searches)
+    - **Information Assistant Mode**: For complex queries requiring explanations
+    - **Mixed Mode**: Automatic fallback for ambiguous queries
+    - **Image Gallery**: Includes relevant images from Wikimedia Commons
+    - **Related Questions**: Suggests 3 follow-up questions
+
+    **Best For:**
+    - General information requests
+    - Comparing products or concepts
+    - Understanding complex topics
+    - Exploring new subjects
+
+    **Example Queries:**
+    - "What are the benefits of meditation?"
+    - "Compare iPhone 14 and Samsung Galaxy S23"
+    - "Find kid-friendly activities in Sydney"
+
+    <Tip>
+      Default mode is recommended for most searches as it balances depth with readability.
+    </Tip>
+  </Tab>
+
+  <Tab title="Exhaustive">
+    ### Exhaustive Mode
+    
+    Maximum depth and detail for comprehensive research and thorough understanding.
+
+    **Model Configuration:**
+    ```typescript
+    {
+      model: "gemini-2.0-flash",
+      temperature: 0.8,      // Moderate creativity
+      topP: 0.95,            // Top 95% probability mass
+      topK: 40,              // Consider top 40 tokens
+      maxOutputTokens: 65536 // Full output capacity
+    }
+    ```
+
+    **Enhanced Features:**
+    - Performs **≥10 searches** (vs 5 in default mode)
+    - Extended image galleries (10+ images)
+    - Comprehensive source citations
+    - Detailed analysis and explanations
+    - Multiple perspectives on topics
+
+    **Best For:**
+    - Academic research
+    - In-depth topic exploration
+    - Professional analysis
+    - Comprehensive reports
+
+    **Example Queries:**
+    - "Explain quantum computing in detail"
+    - "Comprehensive analysis of climate change impacts"
+    - "History of artificial intelligence"
+
+    <Warning>
+      Exhaustive mode may take longer to respond due to extensive research and content generation.
+    </Warning>
+  </Tab>
+
+  <Tab title="Search">
+    ### Search Mode
+    
+    Optimized for finding and listing relevant URLs with descriptions.
+
+    **Model Configuration:**
+    ```typescript
+    {
+      model: "gemini-2.0-flash",
+      temperature: 0.4,      // Lower for focused results
+      topP: 1,               // Full probability mass
+      topK: 1,               // Single most likely token
+      maxOutputTokens: 1024  // Moderate output
+    }
+    ```
+
+    **Output Format:**
+    ```
+    [URL] - [Concise description of website content]
+    [URL] - [Concise description of website content]
+    ...
+
+    RELATED_QUESTIONS:
+    1. [Question related to the search query]
+    2. [Question related to the search query]
+    3. [Question related to the search query]
+    ```
+
+    **Best For:**
+    - Finding specific websites
+    - Resource discovery
+    - Curated link lists
+    - Website recommendations
+
+    **Example Queries:**
+    - "Best online learning platforms"
+    - "JavaScript documentation sites"
+    - "Design inspiration websites"
+
+    <Info>
+      Search mode returns structured lists of URLs with descriptions, perfect for resource discovery.
+    </Info>
+  </Tab>
+
+  <Tab title="Reasoning">
+    ### Reasoning Mode
+    
+    Advanced mode that combines Deepseek's reasoning capabilities with Gemini's search tools.
+
+    **Model Configuration:**
+    ```typescript
+    {
+      model: "gemini-2.0-flash",
+      temperature: 1.0,      // Balanced creativity
+      topP: 0.95,            // Top 95% probability mass
+      topK: 40,              // Consider top 40 tokens
+      maxOutputTokens: 65536 // Full output capacity
+    }
+    ```
+
+    **Two-Stage Process:**
+    1. **Reasoning Stage**: Deepseek analyzes the query and creates a search strategy
+    2. **Search Stage**: Gemini executes the strategy and provides results
+
+    **Reasoning Model** (via OpenAI-compatible API):
+    - Uses Deepseek Reasoner (configurable)
+    - Streams reasoning process to client
+    - Defines information needs and explanation strategy
+
+    **Best For:**
+    - Complex analytical queries
+    - Multi-step problems
+    - Strategic research
+    - Academic analysis
+
+    **Example Queries:**
+    - "How would implementing universal basic income affect the economy?"
+    - "Analyze the trade-offs between different database architectures"
+    - "What are the ethical implications of AI in healthcare?"
+
+    <Tip>
+      Reasoning mode shows you the AI's thought process before searching, providing transparency in how it approaches your query.
+    </Tip>
+
+    See [Reasoning Mode](/features/reasoning-mode) for detailed information.
+  </Tab>
+</Tabs>
+
+## Switching Between Modes
+
+You can easily switch modes using the mode selector in the search interface:
+
+```typescript
+// Mode selector component implementation
+import { SearchControls } from '@/components/SearchControls'
+
+<SearchControls
+  searchMode="default"
+  onSearchModeChange={(mode) => setSearchMode(mode)}
+  direction="right"
+/>
+```
+
+<Accordion title="View SearchControls Component">
+  The `SearchControls` component provides a dropdown interface with:
+  
+  - **Visual mode indicators**: Each mode has a unique icon
+  - **Mode descriptions**: Hover to see what each mode does
+  - **Keyboard navigation**: Use arrow keys to navigate modes
+  - **Persistent selection**: Your choice is remembered during the session
+
+  Available icons:
+  - Concise: `MessageSquare`
+  - Default: `MessageSquareMore`
+  - Exhaustive: `Telescope`
+  - Search: `Search`
+  - Reasoning: `Sparkle`
+</Accordion>
+
+## Common System Instructions
+
+All modes (except Concise) follow this core behavior:
+
+<Steps>
+  <Step title="Tool Usage">
+    Always use the `google_search` tool to find information. Never rely solely on internal knowledge.
+  </Step>
+  
+  <Step title="Mode Selection">
+    Automatically determine whether to use:
+    - **Search Mode**: For keyword queries seeking specific websites
+    - **Information Assistant Mode**: For complex questions requiring explanation
+    - **Mixed Mode**: When query intent is ambiguous
+  </Step>
+  
+  <Step title="Response Formatting">
+    Structure responses with proper markdown, including:
+    - Headers and sections
+    - Bullet points and lists
+    - Source citations
+    - Related questions
+  </Step>
+</Steps>
+
+## API Usage
+
+To use different modes programmatically:
+
+<CodeGroup>
+```bash GET Request
+curl "https://api.omnisearches.com/api/search?q=your+query&mode=default"
+```
+
+```bash POST Request
+curl -X POST https://api.omnisearches.com/api/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "your query",
+    "mode": "exhaustive",
+    "language": "English"
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('/api/search', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    query: 'your query',
+    mode: 'reasoning', // concise | default | exhaustive | search | reasoning
+    language: 'English'
+  })
+});
+
+const data = await response.json();
+console.log(data.summary, data.sources, data.relatedQuestions);
+```
+</CodeGroup>
+
+## Performance Comparison
+
+<Note>
+  Response times and token usage vary based on query complexity and mode selection.
+</Note>
+
+| Mode | Avg Response Time | Max Tokens | Searches | Images |
+|------|------------------|------------|----------|--------|
+| Concise | < 2s | 150 | Auto | No |
+| Default | 3-5s | 65,536 | ≥5 | 4-8 |
+| Exhaustive | 5-10s | 65,536 | ≥10 | 10+ |
+| Search | 2-4s | 1,024 | Auto | No |
+| Reasoning | 8-15s | 65,536 | ≥10 | 4-8 |
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Image Search" icon="image" href="/features/image-search">
+    Learn how image galleries work in Default, Exhaustive, and Reasoning modes
+  </Card>
+  <Card title="Related Questions" icon="circle-question" href="/features/related-questions">
+    Discover how AI generates contextual follow-up questions
+  </Card>
+  <Card title="Reasoning Mode" icon="brain" href="/features/reasoning-mode">
+    Deep dive into the two-stage reasoning process
+  </Card>
+</CardGroup>

@@ -1,0 +1,398 @@
+---
+title: 'Reasoning'
+description: 'Generate search strategies and explanation plans using streaming AI reasoning'
+---
+
+## Overview
+
+The reasoning endpoint analyzes a query and generates a strategic plan for searching and explaining, without actually answering the question. It acts as an "initial explorer" that defines:
+
+1. **Information needs**: What specific data is required to answer the query
+2. **Explanation strategy**: How to structure the answer once information is gathered
+
+This endpoint uses server-sent events (SSE) for real-time streaming of reasoning tokens.
+
+## Endpoint
+
+```http
+GET /api/reasoning?q={query}&language={language}
+```
+
+## Query Parameters
+
+<ParamField query="q" type="string" required>
+  The query to analyze. The reasoning model will generate a search strategy for this question.
+</ParamField>
+
+<ParamField query="language" type="string">
+  Language for the reasoning output (e.g., "English", "Spanish", "French"). Defaults to English if not specified.
+</ParamField>
+
+## Request Example
+
+```bash
+curl -N "http://localhost:3000/api/reasoning?q=How%20does%20quantum%20entanglement%20work&language=English"
+```
+
+<Note>
+The `-N` flag in curl disables buffering, allowing you to see the streamed response in real-time.
+</Note>
+
+## Response Format
+
+This endpoint streams data using **Server-Sent Events (SSE)** with `Content-Type: text/event-stream`.
+
+### Response Headers
+
+```http
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+```
+
+### Event Stream Format
+
+The response consists of multiple `data:` events:
+
+#### Content Events
+
+Streamed as the reasoning is generated:
+
+```
+data: {"content":"<think>\n\n"}
+
+data: {"content":"To"}
+
+data: {"content":" understand"}
+
+data: {"content":" how"}
+
+data: {"content":" quantum"}
+
+data: {"content":" entanglement"}
+
+data: {"content":" works..."}
+```
+
+<ResponseField name="content" type="string">
+  A single token or chunk of the reasoning text. Clients should concatenate all content chunks to build the complete reasoning.
+</ResponseField>
+
+#### Completion Event
+
+Sent as the final event when reasoning is complete:
+
+```
+data: {"complete":true,"reasoning":"<think>\n\nTo understand how quantum entanglement works, we need to...\n\n</think>"}
+
+```
+
+<ResponseField name="complete" type="boolean">
+  Set to `true` when reasoning is finished
+</ResponseField>
+
+<ResponseField name="reasoning" type="string">
+  The complete reasoning text, wrapped in `<think>` tags
+</ResponseField>
+
+## Response Example
+
+Complete streamed response:
+
+```
+data: {"content":"<think>\n\n"}
+
+data: {"content":"## Information Needs\n\n"}
+
+data: {"content":"To answer how quantum entanglement works, we need to search for:\n\n"}
+
+data: {"content":"1. **Fundamental Concepts**: Definition of quantum entanglement, basic principles of quantum mechanics\n"}
+
+data: {"content":"2. **Mechanism**: How particles become entangled, what properties are correlated\n"}
+
+data: {"content":"3. **Mathematical Framework**: Wave functions, Bell's theorem, quantum correlations\n"}
+
+data: {"content":"4. **Experimental Evidence**: EPR paradox, Bell test experiments, modern applications\n\n"}
+
+data: {"content":"## Explanation Strategy\n\n"}
+
+data: {"content":"Once we have this information, structure the explanation as follows:\n\n"}
+
+data: {"content":"1. **Introduction**: Simple analogy to introduce the concept\n"}
+
+data: {"content":"2. **The Phenomenon**: Describe what happens when particles are entangled\n"}
+
+data: {"content":"3. **Scientific Explanation**: Quantum superposition and measurement collapse\n"}
+
+data: {"content":"4. **Key Principles**: Non-locality, correlations without communication\n"}
+
+data: {"content":"5. **Real-world Context**: Current research and applications\n\n"}
+
+data: {"content":"</think>"}
+
+data: {"complete":true,"reasoning":"<think>\n\n## Information Needs\n\nTo answer how quantum entanglement works, we need to search for:\n\n1. **Fundamental Concepts**: Definition of quantum entanglement, basic principles of quantum mechanics\n2. **Mechanism**: How particles become entangled, what properties are correlated\n3. **Mathematical Framework**: Wave functions, Bell's theorem, quantum correlations\n4. **Experimental Evidence**: EPR paradox, Bell test experiments, modern applications\n\n## Explanation Strategy\n\nOnce we have this information, structure the explanation as follows:\n\n1. **Introduction**: Simple analogy to introduce the concept\n2. **The Phenomenon**: Describe what happens when particles are entangled\n3. **Scientific Explanation**: Quantum superposition and measurement collapse\n4. **Key Principles**: Non-locality, correlations without communication\n5. **Real-world Context**: Current research and applications\n\n</think>"}
+
+```
+
+## Error Responses
+
+### 400 Bad Request
+
+```json
+{
+  "message": "Query parameter 'q' is required"
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "message": "An error occurred while processing your reasoning"
+}
+```
+
+Or specific error from the reasoning model:
+
+```json
+{
+  "message": "API key authentication failed"
+}
+```
+
+## Client Implementation Examples
+
+### JavaScript (Fetch API)
+
+```javascript
+async function streamReasoning(query, language = 'English') {
+  const response = await fetch(
+    `http://localhost:3000/api/reasoning?q=${encodeURIComponent(query)}&language=${language}`
+  );
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let reasoning = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\n');
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = JSON.parse(line.slice(6));
+        
+        if (data.content) {
+          reasoning += data.content;
+          console.log(data.content); // Stream to console
+        }
+        
+        if (data.complete) {
+          console.log('\nComplete reasoning:', data.reasoning);
+          return data.reasoning;
+        }
+      }
+    }
+  }
+  
+  return reasoning;
+}
+
+// Usage
+streamReasoning('How does blockchain ensure security?');
+```
+
+### Python (requests)
+
+```python
+import requests
+import json
+
+def stream_reasoning(query, language='English'):
+    url = f'http://localhost:3000/api/reasoning'
+    params = {'q': query, 'language': language}
+    
+    response = requests.get(url, params=params, stream=True)
+    reasoning = ''
+    
+    for line in response.iter_lines():
+        if line:
+            line = line.decode('utf-8')
+            if line.startswith('data: '):
+                data = json.loads(line[6:])
+                
+                if 'content' in data:
+                    content = data['content']
+                    reasoning += content
+                    print(content, end='', flush=True)
+                
+                if data.get('complete'):
+                    print('\n\nComplete reasoning:', data['reasoning'])
+                    return data['reasoning']
+    
+    return reasoning
+
+# Usage
+reasoning = stream_reasoning('How does blockchain ensure security?')
+```
+
+### cURL
+
+```bash
+# Stream to console
+curl -N "http://localhost:3000/api/reasoning?q=How%20does%20blockchain%20ensure%20security&language=English"
+
+# Save complete reasoning to file
+curl -N "http://localhost:3000/api/reasoning?q=How%20does%20blockchain%20ensure%20security" 2>/dev/null | \
+  grep -o '"reasoning":"[^"]*' | \
+  sed 's/"reasoning":"//' | \
+  sed 's/\\n/\n/g' > reasoning.txt
+```
+
+## Integration with Search
+
+The reasoning output is designed to be passed to the search endpoint:
+
+```javascript
+// 1. Get reasoning analysis
+const reasoning = await streamReasoning('How does blockchain ensure security?');
+
+// 2. Use reasoning in search
+const searchResponse = await fetch('http://localhost:3000/api/search', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    query: 'How does blockchain ensure security?',
+    mode: 'default',
+    reasoning: reasoning
+  })
+});
+
+const result = await searchResponse.json();
+console.log(result.summary);
+```
+
+## Technical Details
+
+### Reasoning Model Configuration
+
+The endpoint uses a configurable reasoning model (default: DeepSeek Reasoner):
+
+**Environment Variables**:
+- `REASON_MODEL_API_URL`: Base URL for the reasoning API
+- `REASON_MODEL_API_KEY`: Authentication key
+- `REASON_MODEL`: Model identifier (defaults to "deepseek-reasoner")
+
+**Model Parameters**:
+- Streaming enabled for real-time output
+- System prompt configures the model as a "search strategy expert"
+- Language-specific instruction injection
+
+### System Prompt
+
+The reasoning model receives this system instruction:
+
+```
+You are a helpful reasoner, acting as the **initial explorer** for a Search Agent. 
+Your role is to **define the search strategy**, not to find the answer itself.
+
+Your task is to think like a search expert and determine:
+
+1. **Information Needs:** What specific types of information, facts, or data are 
+   absolutely necessary to fully understand and answer the user's query? Think 
+   about the *categories* of information we need to search for.
+
+2. **Explanation Strategy:** Once we have all the necessary information, how 
+   should we structure our explanation to clearly and comprehensively answer 
+   the user's query? Outline the *key points* or *logical steps* of the explanation.
+
+Remember, your output should be a **search and explanation plan**, not the answer. 
+Focus on *how* we will search and *how* we will explain, rather than *what* the 
+answer is. Only provide ideas and plans, do not attempt to answer the user's query.
+```
+
+### Think Tags
+
+The reasoning output is wrapped in `<think>` tags:
+- Start: `<think>`
+- End: `</think>`
+
+These tags can be used to parse and identify reasoning sections in your application.
+
+## Use Cases
+
+### Complex Queries
+
+**Without reasoning**:
+```
+Query: "Why did the Roman Empire fall?"
+Result: Basic answer covering common factors
+```
+
+**With reasoning**:
+```
+Reasoning: Need to search for economic factors, military issues, political 
+instability, social changes, and external pressures. Structure as chronological 
+analysis with interconnected causes.
+
+Result: Comprehensive answer with structured analysis of multiple factors
+```
+
+### Multi-faceted Questions
+
+```
+Query: "Should I invest in cryptocurrency?"
+
+Reasoning identifies need for:
+- Current market conditions
+- Risk factors and volatility
+- Regulatory landscape
+- Investment strategies
+- Alternative investment options
+
+Structures answer as: risks → benefits → considerations → recommendation framework
+```
+
+### Technical Explanations
+
+```
+Query: "How do neural networks learn?"
+
+Reasoning outlines:
+- Forward propagation mechanics
+- Backpropagation algorithm
+- Gradient descent optimization
+- Training data role
+- Parameter tuning
+
+Explanation strategy: Simple analogy → core mechanism → mathematical basis → practical implications
+```
+
+## Best Practices
+
+1. **Always use streaming**: Don't wait for the complete response; display tokens as they arrive
+2. **Handle disconnections**: Implement reconnection logic for network interruptions
+3. **Parse think tags**: Extract reasoning from `<think>` blocks programmatically
+4. **Pass to search**: Use reasoning output in POST /api/search for enhanced results
+5. **Cache reasoning**: Store reasoning for repeated queries to avoid redundant API calls
+
+## Performance
+
+- **Latency**: First token typically arrives within 200-500ms
+- **Duration**: Complete reasoning takes 3-15 seconds depending on query complexity
+- **Tokens**: Output ranges from 200-2000 tokens
+- **Rate limits**: Depends on reasoning model provider (e.g., DeepSeek API limits)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search with Reasoning" icon="magnifying-glass" href="/api/search">
+    Use reasoning output in search requests
+  </Card>
+  <Card title="Follow-up Questions" icon="comments" href="/api/follow-up">
+    Continue conversations after search
+  </Card>
+</CardGroup>

@@ -1,80 +1,180 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get OmniSearches running in under 5 minutes
 ---
 
-## Get started in three steps
+Get your own AI-powered search engine running in less than 5 minutes. This guide will have you performing intelligent searches with Google Gemini 2.0 Flash and Deepseek reasoning.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, ensure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+- **Node.js** v18 or higher installed ([download here](https://nodejs.org/))
+- **npm** package manager (comes with Node.js)
+- **Google API Key** with Gemini API access ([get one free](https://ai.google.dev/))
+- **OpenRouter API Key** for Deepseek ([get one free](https://openrouter.ai/))
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+Both API keys are completely free to obtain. Google provides generous free tier access to Gemini 2.0 Flash, and OpenRouter offers free access to Deepseek R1 Distill Llama 70B.
 </Note>
+
+## Quick Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone OmniSearches to your local machine:
+
+    ```bash
+    git clone https://github.com/kiwigaze/OmniSearches.git
+    cd OmniSearches
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required packages using npm:
+
+    ```bash
+    npm install
+    ```
+
+    This will install all frontend and backend dependencies including React, Vite, Express, and the Google Generative AI SDK.
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in the root directory with your API keys:
+
+    ```bash
+    GOOGLE_API_KEY=your_google_api_key_here
+    REASON_MODEL_API_KEY=your_openrouter_api_key_here
+    REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+    REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+    ```
+
+    <Warning>
+    Never commit your `.env` file to version control. The `.gitignore` is already configured to exclude it.
+    </Warning>
+
+    Replace the placeholder values:
+    - `your_google_api_key_here` - Your Google AI Studio API key
+    - `your_openrouter_api_key_here` - Your OpenRouter API key
+  </Step>
+
+  <Step title="Start the development server">
+    Launch the application in development mode:
+
+    ```bash
+    npm run dev
+    ```
+
+    The server will start on port 3000. You'll see output indicating the server is running.
+  </Step>
+
+  <Step title="Open in your browser">
+    Navigate to the application:
+
+    ```
+    http://localhost:3000
+    ```
+
+    You should see the OmniSearches homepage with a search interface.
+  </Step>
+
+  <Step title="Perform your first search">
+    Try these example searches to explore different modes:
+
+    - **Default mode**: "What are the latest developments in quantum computing?"
+    - **Reasoning mode**: "Explain why the sky appears blue"
+    - **Image search**: "Mount Everest" (check the images tab)
+    - **Concise mode**: "Population of Tokyo"
+  </Step>
+</Steps>
+
+## What You Get
+
+Once running, OmniSearches provides:
+
+- **Real-time web search** powered by Google Search integration
+- **AI-generated answers** with source citations and references
+- **4 search modes**: Concise, Default, Exhaustive, and Reasoning
+- **Image search** from Wikimedia Commons
+- **Related questions** to expand your research
+- **Follow-up questions** that maintain conversation context
+
+## Search Modes Explained
+
+<CardGroup cols={2}>
+  <Card title="Concise" icon="bolt">
+    Quick, brief answers (max 150 tokens). Perfect for facts and simple queries.
+  </Card>
+  <Card title="Default" icon="message">
+    Balanced responses with comprehensive coverage. Best for most searches.
+  </Card>
+  <Card title="Exhaustive" icon="book">
+    Detailed, in-depth analysis (up to 65K tokens). Use for research topics.
+  </Card>
+  <Card title="Reasoning" icon="brain">
+    Deep reasoning powered by Deepseek. Explains the "why" behind answers.
+  </Card>
+</CardGroup>
+
+## Verify Installation
+
+To confirm everything is working correctly:
+
+1. **Check the console** - You should see "serving on port 3000" without errors
+2. **Perform a search** - Try "test query" and verify you get results with sources
+3. **Check reasoning mode** - Enable reasoning mode and verify streaming responses appear
+4. **View sources** - Expand the sources section to see web citations
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Port 3000 already in use">
+    If port 3000 is occupied, you can change it by setting the `PORT` environment variable:
+
+    ```bash
+    PORT=3001 npm run dev
+    ```
+  </Accordion>
+
+  <Accordion title="API key errors">
+    If you see authentication errors:
+    - Verify your `.env` file is in the root directory
+    - Ensure no extra spaces in API keys
+    - Check that your Google API key has Gemini API enabled
+    - Confirm your OpenRouter key is valid
+  </Accordion>
+
+  <Accordion title="Module not found errors">
+    If you encounter import errors:
+
+    ```bash
+    rm -rf node_modules package-lock.json
+    npm install
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Detailed installation and configuration options
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Learn how OmniSearches works under the hood
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the REST API endpoints
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/configuration/deployment">
+    Deploy to Railway, Vercel, or your own server
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+If you encounter issues:
+- Check the [Installation Guide](/installation) for detailed troubleshooting
+- Review the [GitHub Issues](https://github.com/kiwigaze/OmniSearches/issues)
+- Join the community discussions on GitHub

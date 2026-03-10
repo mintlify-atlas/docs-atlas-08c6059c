@@ -1,0 +1,433 @@
+---
+title: 'Follow-up'
+description: 'Continue conversations in existing search sessions with contextual follow-up questions'
+---
+
+## Overview
+
+The follow-up endpoint allows you to ask additional questions within an existing search session, maintaining conversation context and chat history. This enables multi-turn conversations where each question builds on previous answers.
+
+## Endpoint
+
+```http
+POST /api/follow-up
+Content-Type: application/json
+```
+
+## Request Body
+
+<ParamField body="sessionId" type="string" required>
+  The session identifier returned from a previous `/api/search` request. This links the follow-up question to the existing conversation context.
+</ParamField>
+
+<ParamField body="query" type="string" required>
+  The follow-up question or statement. Can reference previous answers using pronouns or context (e.g., "Tell me more about that", "What are the alternatives?").
+</ParamField>
+
+## Request Example
+
+```bash
+# First, perform initial search
+RESPONSE=$(curl -s "http://localhost:3000/api/search?q=What+is+photosynthesis&mode=default")
+SESSION_ID=$(echo $RESPONSE | grep -o '"sessionId":"[^"]*' | cut -d'"' -f4)
+
+# Then ask follow-up questions
+curl -X POST http://localhost:3000/api/follow-up \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"sessionId\": \"$SESSION_ID\",
+    \"query\": \"What are the two main stages of this process?\"
+  }"
+```
+
+### Complete Conversation Example
+
+```javascript
+// Initial search
+const searchRes = await fetch('http://localhost:3000/api/search?q=What+is+machine+learning');
+const searchData = await searchRes.json();
+
+console.log('Initial answer:', searchData.summary);
+console.log('Session ID:', searchData.sessionId);
+
+// Follow-up 1
+const followUp1 = await fetch('http://localhost:3000/api/follow-up', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: searchData.sessionId,
+    query: 'What are the main types?'
+  })
+});
+const followUp1Data = await followUp1.json();
+console.log('Follow-up 1:', followUp1Data.summary);
+
+// Follow-up 2 (references follow-up 1)
+const followUp2 = await fetch('http://localhost:3000/api/follow-up', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: searchData.sessionId,
+    query: 'Can you explain the first type in more detail?'
+  })
+});
+const followUp2Data = await followUp2.json();
+console.log('Follow-up 2:', followUp2Data.summary);
+```
+
+## Response
+
+<ResponseField name="summary" type="string" required>
+  HTML-formatted answer to the follow-up question, generated with full conversation context. Uses markdown-to-HTML conversion for proper formatting.
+</ResponseField>
+
+<ResponseField name="sources" type="array" required>
+  Array of web sources used to ground this specific answer.
+  
+  <Expandable title="Source Object">
+    <ResponseField name="title" type="string">
+      Title of the source webpage
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      Full URL of the source
+    </ResponseField>
+    
+    <ResponseField name="snippet" type="string">
+      Relevant text segments that reference this source
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+Unlike the initial search response, follow-up responses do not include `sessionId` (use the same one for subsequent questions), `relatedQuestions`, or `images`.
+</Note>
+
+## Response Example
+
+```json
+{
+  "summary": "<h2>Types of Machine Learning</h2>\n<p>The three main types are:</p>\n<h3>Supervised Learning</h3>\n<p>The algorithm learns from labeled training data, where both input and desired output are provided...</p>\n<h3>Unsupervised Learning</h3>\n<p>The algorithm finds patterns in unlabeled data...</p>\n<h3>Reinforcement Learning</h3>\n<p>The algorithm learns through trial and error...</p>",
+  "sources": [
+    {
+      "title": "Types of Machine Learning - Stanford",
+      "url": "https://cs.stanford.edu/ml-types",
+      "snippet": "The three main types are: Supervised Learning Unsupervised Learning Reinforcement Learning"
+    },
+    {
+      "title": "Machine Learning Categories Explained",
+      "url": "https://example.com/ml-categories",
+      "snippet": "The algorithm learns from labeled training data"
+    }
+  ]
+}
+```
+
+## Error Responses
+
+### 400 Bad Request - Missing Parameters
+
+```json
+{
+  "message": "Both sessionId and query are required"
+}
+```
+
+### 404 Not Found - Invalid Session
+
+```json
+{
+  "message": "Chat session not found"
+}
+```
+
+This occurs when:
+- The session ID doesn't exist
+- The session has expired (server restart)
+- The session ID is malformed
+
+### 500 Internal Server Error
+
+```json
+{
+  "message": "An error occurred while processing your follow-up question"
+}
+```
+
+Or specific error from the AI model:
+
+```json
+{
+  "message": "Rate limit exceeded for API requests"
+}
+```
+
+## Session Management
+
+### Session Lifecycle
+
+1. **Creation**: Sessions are created by `/api/search` (GET or POST)
+2. **Storage**: Stored in-memory on the server using a Map
+3. **Usage**: Used by `/api/follow-up` to maintain context
+4. **Expiration**: Sessions persist until server restart
+
+### Session ID Format
+
+Session IDs are 6-7 character alphanumeric strings generated using:
+
+```javascript
+Math.random().toString(36).substring(7)
+```
+
+Example: `k7x9m2a`, `abc123`, `x5y8z1`
+
+<Warning>
+**Important**: Sessions are stored in memory and will be lost when the server restarts. For production use, implement persistent session storage (Redis, database, etc.).
+</Warning>
+
+## Context Preservation
+
+The follow-up endpoint maintains full conversation context:
+
+### What is Preserved
+
+- All previous questions and answers in the session
+- Search tool access for grounding
+- Model configuration and system prompts from initial search
+- Conversation history for contextual understanding
+
+### What is NOT Preserved
+
+- Uploaded images (only available for the initial search)
+- Reasoning context (only applies to the first search)
+- Related questions from previous turns
+- Image results from previous searches
+
+### Example Context Flow
+
+```
+Initial: "What is photosynthesis?"
+Answer: [Explanation of photosynthesis]
+
+Follow-up 1: "What are the two main stages?"
+Context: Model understands "two main stages" refers to photosynthesis
+Answer: [Light-dependent and light-independent reactions]
+
+Follow-up 2: "Where does the first one occur?"
+Context: Model understands "first one" means light-dependent reactions
+Answer: [Thylakoid membranes in chloroplasts]
+```
+
+## Best Practices
+
+### 1. Store Session IDs
+
+```javascript
+// Good: Store session ID for the entire conversation
+const session = { id: searchData.sessionId, topic: 'quantum computing' };
+localStorage.setItem('currentSession', JSON.stringify(session));
+```
+
+### 2. Handle Session Expiration
+
+```javascript
+async function askFollowUp(sessionId, query) {
+  const response = await fetch('/api/follow-up', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, query })
+  });
+  
+  if (response.status === 404) {
+    // Session expired - start new search
+    console.log('Session expired, starting new search');
+    return startNewSearch(query);
+  }
+  
+  return response.json();
+}
+```
+
+### 3. Use Contextual References
+
+```javascript
+// Good: Reference previous context
+const questions = [
+  "What is blockchain?",
+  "How does it ensure security?",  // "it" refers to blockchain
+  "What are the main types?",      // "types" of blockchain
+  "Explain the first one"          // "first one" references the types
+];
+
+// Less effective: Repeat full context
+const questions = [
+  "What is blockchain?",
+  "How does blockchain ensure security?",
+  "What are the main types of blockchain?",
+  "Explain proof of work in blockchain"
+];
+```
+
+### 4. Session Grouping
+
+Group related conversations by topic:
+
+```javascript
+const sessions = {
+  'quantum-computing': { id: 'abc123', created: Date.now() },
+  'machine-learning': { id: 'xyz789', created: Date.now() },
+  'blockchain': { id: 'def456', created: Date.now() }
+};
+
+function askQuestion(topic, question) {
+  const session = sessions[topic];
+  if (!session) {
+    return startNewSearch(question);
+  }
+  return askFollowUp(session.id, question);
+}
+```
+
+## Use Cases
+
+### Research Conversations
+
+```bash
+# Deep dive into a topic
+Initial: "What is CRISPR gene editing?"
+Follow-up 1: "What are the ethical concerns?"
+Follow-up 2: "How is it being used in medicine?"
+Follow-up 3: "What are the limitations?"
+```
+
+### Clarification Requests
+
+```bash
+Initial: "Explain how neural networks work"
+Follow-up: "Can you explain backpropagation in simpler terms?"
+Follow-up: "What's an example with actual numbers?"
+```
+
+### Comparative Analysis
+
+```bash
+Initial: "What is React?"
+Follow-up: "How does it compare to Vue.js?"
+Follow-up: "Which one should I use for a large enterprise application?"
+```
+
+### Drilling Down
+
+```bash
+Initial: "Overview of renewable energy"
+Follow-up: "Tell me more about solar energy specifically"
+Follow-up: "What are the latest improvements in solar panel efficiency?"
+Follow-up: "Which companies are leading in this technology?"
+```
+
+## Technical Details
+
+### Chat Session Storage
+
+```typescript
+const chatSessions = new Map<string, ChatSession>();
+
+// Session creation (in /api/search)
+const sessionId = Math.random().toString(36).substring(7);
+chatSessions.set(sessionId, chat);
+
+// Session retrieval (in /api/follow-up)
+const chat = chatSessions.get(sessionId);
+if (!chat) {
+  return res.status(404).json({ message: "Chat session not found" });
+}
+```
+
+### Response Processing
+
+Follow-up responses go through the same processing pipeline as initial searches:
+
+1. Send message to existing chat session
+2. Extract response text
+3. Format to markdown/HTML
+4. Parse grounding metadata for sources
+5. Return formatted response
+
+### Grounding Preservation
+
+Each follow-up maintains the Google Search tool:
+
+```typescript
+const chat = model.startChat({
+  tools: [{ google_search: {} }]
+});
+```
+
+This ensures follow-up answers are still grounded in current web information, not just conversation history.
+
+## Limitations
+
+<Warning>
+1. **Memory storage**: Sessions lost on server restart
+2. **No image context**: Cannot reference images from initial search
+3. **No session listing**: Cannot retrieve all sessions for a user
+4. **No session metadata**: Cannot query session creation time, message count, etc.
+5. **No session deletion**: Cannot manually clear old sessions
+</Warning>
+
+## Production Considerations
+
+### Implement Persistent Storage
+
+```javascript
+// Redis example
+import { createClient } from 'redis';
+
+const redis = createClient();
+
+// Store session
+await redis.set(`session:${sessionId}`, JSON.stringify(chatHistory), {
+  EX: 3600  // 1 hour expiration
+});
+
+// Retrieve session
+const history = await redis.get(`session:${sessionId}`);
+```
+
+### Add Session Metadata
+
+```javascript
+interface Session {
+  id: string;
+  userId: string;
+  created: number;
+  lastActivity: number;
+  messageCount: number;
+  topic: string;
+}
+```
+
+### Implement Session Cleanup
+
+```javascript
+// Clean up sessions older than 1 hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [sessionId, session] of chatSessions.entries()) {
+    if (now - session.lastActivity > 3600000) {
+      chatSessions.delete(sessionId);
+    }
+  }
+}, 300000); // Check every 5 minutes
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Endpoint" icon="magnifying-glass" href="/api/search">
+    Start new conversations with searches
+  </Card>
+  <Card title="Reasoning" icon="brain" href="/api/reasoning">
+    Add reasoning for complex queries
+  </Card>
+</CardGroup>

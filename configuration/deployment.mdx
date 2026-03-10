@@ -1,0 +1,383 @@
+---
+title: "Deployment"
+description: "Deploy OmniSearches to Railway, Vercel, or other hosting platforms"
+---
+
+## Overview
+
+OmniSearches can be deployed to various hosting platforms. This guide covers deployment to Railway (recommended), as well as other popular platforms.
+
+## Prerequisites
+
+Before deploying, ensure you have:
+
+- A Google API key with Gemini API access
+- An OpenRouter API key with Deepseek model access
+- A GitHub account (for most deployment options)
+- Node.js v18 or higher installed locally
+
+<Tip>
+  See the [Environment Variables](/configuration/environment-variables) guide for detailed information on obtaining API keys.
+</Tip>
+
+## Deploy to Railway
+
+[Railway](https://railway.app) is the recommended platform for deploying OmniSearches. It offers simple deployment, automatic scaling, and built-in environment variable management.
+
+### One-Click Deployment
+
+The fastest way to deploy to Railway:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/)
+
+1. Click the **Deploy on Railway** button
+2. Log in with your GitHub account
+3. Configure your environment variables:
+   - `GOOGLE_API_KEY`
+   - `REASON_MODEL_API_KEY`
+   - `REASON_MODEL_API_URL`
+   - `REASON_MODEL` (optional)
+4. Click **Deploy**
+
+Railway will automatically build and deploy your application. The deployment typically takes 2-3 minutes.
+
+### Manual Railway Deployment
+
+To deploy manually to Railway:
+
+1. **Install Railway CLI:**
+
+```bash
+npm install -g @railway/cli
+```
+
+2. **Login to Railway:**
+
+```bash
+railway login
+```
+
+3. **Initialize a new project:**
+
+```bash
+railway init
+```
+
+4. **Set environment variables:**
+
+```bash
+railway variables set GOOGLE_API_KEY=your_key_here
+railway variables set REASON_MODEL_API_KEY=your_key_here
+railway variables set REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+railway variables set REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+railway variables set NODE_ENV=production
+```
+
+5. **Deploy:**
+
+```bash
+railway up
+```
+
+### Railway Configuration
+
+Railway automatically detects the build and start commands from `package.json`:
+
+- **Build command:** `npm run build`
+- **Start command:** `npm run start`
+
+The build process:
+1. Installs dependencies (`npm install`)
+2. Builds the frontend with Vite
+3. Bundles the backend with esbuild
+4. Outputs to the `dist/` directory
+
+<Note>
+  Railway's free tier includes 500 execution hours per month and $5 of credit, which is sufficient for testing and small projects.
+</Note>
+
+## Deploy to Vercel
+
+Vercel is optimized for frontend applications but can also host Node.js backends using serverless functions.
+
+### Deployment Steps
+
+1. **Install Vercel CLI:**
+
+```bash
+npm install -g vercel
+```
+
+2. **Login:**
+
+```bash
+vercel login
+```
+
+3. **Deploy:**
+
+```bash
+vercel
+```
+
+4. **Set environment variables in the Vercel dashboard:**
+   - Go to Project Settings → Environment Variables
+   - Add all required environment variables
+   - Redeploy to apply changes
+
+### Vercel Configuration
+
+Create a `vercel.json` file in your project root:
+
+```json vercel.json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/client",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
+```
+
+<Warning>
+  Vercel has limitations on serverless function execution time (10 seconds on free tier). Long-running AI search queries may time out.
+</Warning>
+
+## Deploy with Docker
+
+For self-hosting or deploying to container platforms:
+
+### Create Dockerfile
+
+Create a `Dockerfile` in your project root:
+
+```dockerfile Dockerfile
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy application files
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Start application
+CMD ["npm", "start"]
+```
+
+### Build and Run
+
+```bash
+# Build Docker image
+docker build -t omnisearches .
+
+# Run container with environment variables
+docker run -p 3000:3000 \
+  -e GOOGLE_API_KEY=your_key \
+  -e REASON_MODEL_API_KEY=your_key \
+  -e REASON_MODEL_API_URL=https://openrouter.ai/api/v1 \
+  -e REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free \
+  -e NODE_ENV=production \
+  omnisearches
+```
+
+Or use a `.env` file:
+
+```bash
+docker run -p 3000:3000 --env-file .env omnisearches
+```
+
+## Deploy to Heroku
+
+Deploy to Heroku using Git:
+
+1. **Install Heroku CLI:**
+
+```bash
+npm install -g heroku
+```
+
+2. **Login and create app:**
+
+```bash
+heroku login
+heroku create omnisearches-app
+```
+
+3. **Set environment variables:**
+
+```bash
+heroku config:set GOOGLE_API_KEY=your_key
+heroku config:set REASON_MODEL_API_KEY=your_key
+heroku config:set REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+heroku config:set REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+heroku config:set NODE_ENV=production
+```
+
+4. **Deploy:**
+
+```bash
+git push heroku main
+```
+
+### Heroku Configuration
+
+Create a `Procfile` in your project root:
+
+```text Procfile
+web: npm start
+```
+
+## Deploy to DigitalOcean App Platform
+
+1. Connect your GitHub repository to DigitalOcean
+2. Configure the build settings:
+   - **Build Command:** `npm run build`
+   - **Run Command:** `npm start`
+3. Set environment variables in the App Platform console
+4. Deploy
+
+## Environment-Specific Deployment Notes
+
+### Production Checklist
+
+Before deploying to production:
+
+<Accordion title="Security">
+  - [ ] All API keys are set as environment variables (not in code)
+  - [ ] `NODE_ENV` is set to `production`
+  - [ ] `.env` file is in `.gitignore`
+  - [ ] HTTPS is enabled
+  - [ ] CORS is properly configured if needed
+</Accordion>
+
+<Accordion title="Performance">
+  - [ ] Build process completes successfully
+  - [ ] Static assets are properly bundled
+  - [ ] Production optimizations are enabled
+  - [ ] API rate limits are configured
+</Accordion>
+
+<Accordion title="Monitoring">
+  - [ ] Error logging is configured
+  - [ ] API usage monitoring is set up
+  - [ ] Health check endpoint is working
+  - [ ] Deployment notifications are configured
+</Accordion>
+
+### Build Commands Reference
+
+OmniSearches uses these npm scripts for deployment:
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `npm run build` | Full production build | Deployment, CI/CD |
+| `npm run start` | Start production server | After build, in production |
+| `npm run dev` | Development server | Local development only |
+| `npm run check` | TypeScript type checking | Pre-deployment validation |
+
+<Info>
+  The build command compiles both frontend and backend code. Frontend is built with Vite, backend is bundled with esbuild.
+</Info>
+
+## Post-Deployment
+
+After deploying, verify your installation:
+
+1. **Test the application:**
+   - Visit your deployment URL
+   - Try a search query
+   - Test reasoning mode
+   - Check image search functionality
+
+2. **Monitor API usage:**
+   - Check Google Cloud Console for Gemini API usage
+   - Monitor OpenRouter dashboard for credits
+
+3. **Set up monitoring:**
+   - Configure uptime monitoring
+   - Set up error tracking (e.g., Sentry)
+   - Enable API usage alerts
+
+## Troubleshooting
+
+### Build Failures
+
+If your build fails:
+
+- Check Node.js version (requires v18+)
+- Verify all dependencies are listed in `package.json`
+- Review build logs for specific errors
+- Ensure TypeScript compilation succeeds locally
+
+### Runtime Errors
+
+If your deployed app fails to start:
+
+- Verify all required environment variables are set
+- Check that `NODE_ENV` is set to `production`
+- Review application logs in your hosting platform
+- Ensure API keys are valid and active
+
+### API Errors
+
+If search functionality doesn't work:
+
+- Verify API keys have proper permissions
+- Check API quotas and rate limits
+- Test API keys locally first
+- Review error messages in browser console
+
+## Continuous Deployment
+
+Most platforms support automatic deployments from GitHub:
+
+1. **Connect your GitHub repository** to your hosting platform
+2. **Configure automatic deployments** from the main branch
+3. **Push changes** to GitHub to trigger deployments
+
+Recommended workflow:
+
+```bash
+# Make changes locally
+git add .
+git commit -m "Your changes"
+git push origin main
+
+# Deployment happens automatically
+```
+
+<Tip>
+  Set up branch protection and require pull request reviews before merging to main for safer deployments.
+</Tip>
+
+## Scaling Considerations
+
+For high-traffic deployments:
+
+- **Railway**: Automatically scales within plan limits
+- **Vercel**: Scales automatically with serverless architecture
+- **Docker**: Use container orchestration (Kubernetes, Docker Swarm)
+- **Load balancing**: Add a reverse proxy (nginx, Caddy) for multiple instances
+
+<Note>
+  Need help with deployment? Check the [GitHub repository](https://github.com/kiwigaze/OmniSearches) for issues and discussions, or consult platform-specific documentation.
+</Note>

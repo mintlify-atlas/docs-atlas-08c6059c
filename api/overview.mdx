@@ -1,0 +1,150 @@
+---
+title: 'API Overview'
+description: 'Learn how to integrate OmniSearches into your applications'
+---
+
+## Introduction
+
+The OmniSearches API provides powerful endpoints for performing AI-powered web searches, reasoning analysis, and follow-up conversations. Built on Google's Gemini 2.0 Flash model with grounding capabilities, it delivers accurate, cited answers with automatic source extraction.
+
+## Base URL
+
+All API requests should be made to:
+
+```
+http://localhost:3000/api
+```
+
+In production, replace `localhost:3000` with your deployed server URL.
+
+## Authentication
+
+The OmniSearches API requires server-side configuration with the following environment variables:
+
+<ParamField path="GOOGLE_API_KEY" type="string" required>
+  Google Generative AI API key for Gemini model access
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_KEY" type="string" required>
+  API key for the reasoning model (e.g., DeepSeek)
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_URL" type="string" required>
+  Base URL for the reasoning model API endpoint
+</ParamField>
+
+<ParamField path="REASON_MODEL" type="string">
+  Model identifier for reasoning (defaults to "deepseek-reasoner")
+</ParamField>
+
+<Note>
+The API does not currently require client authentication headers. Authentication is managed through server environment configuration.
+</Note>
+
+## Request Format
+
+All POST requests must include:
+
+```http
+Content-Type: application/json
+```
+
+The API accepts JSON payloads up to 50MB, supporting large image uploads for multimodal search.
+
+## Response Format
+
+All API responses (except streaming endpoints) return JSON with the following structure:
+
+### Success Response
+
+```json
+{
+  "sessionId": "abc123",
+  "summary": "<p>HTML formatted answer...</p>",
+  "sources": [
+    {
+      "title": "Source Title",
+      "url": "https://example.com",
+      "snippet": "Relevant text snippet"
+    }
+  ],
+  "relatedQuestions": [
+    "Related question 1?",
+    "Related question 2?",
+    "Related question 3?"
+  ],
+  "images": [
+    {
+      "url": "https://example.com/image.jpg",
+      "caption": "Image description",
+      "alt": "Alt text"
+    }
+  ]
+}
+```
+
+### Error Response
+
+```json
+{
+  "message": "Error description"
+}
+```
+
+HTTP status codes:
+- `200` - Success
+- `400` - Bad request (missing or invalid parameters)
+- `404` - Resource not found (e.g., invalid session)
+- `500` - Server error
+
+## Rate Limits
+
+Rate limits depend on your Google Generative AI API quota and reasoning model provider limits. Monitor your API usage through the respective provider dashboards.
+
+## API Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Search" icon="magnifying-glass" href="/api/search">
+    Perform AI-powered web searches with multiple modes
+  </Card>
+  <Card title="Reasoning" icon="brain" href="/api/reasoning">
+    Generate search strategies and explanation plans
+  </Card>
+  <Card title="Follow-up" icon="comments" href="/api/follow-up">
+    Continue conversations in existing search sessions
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+1. **Start a search**: Use `GET /api/search` or `POST /api/search` to perform an initial query
+2. **Get reasoning** (optional): Use `GET /api/reasoning` to analyze complex queries before searching
+3. **Follow up**: Use `POST /api/follow-up` with the returned `sessionId` to ask related questions
+
+## Example Workflow
+
+```bash
+# 1. Perform initial search
+curl "http://localhost:3000/api/search?q=What+is+machine+learning&mode=default"
+
+# Response includes sessionId: "abc123"
+
+# 2. Ask follow-up question
+curl -X POST http://localhost:3000/api/follow-up \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "abc123",
+    "query": "What are the main types of machine learning?"
+  }'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Search Endpoint" icon="magnifying-glass" href="/api/search">
+    Explore search modes and parameters
+  </Card>
+  <Card title="Reasoning Endpoint" icon="brain" href="/api/reasoning">
+    Learn about streaming reasoning analysis
+  </Card>
+</CardGroup>

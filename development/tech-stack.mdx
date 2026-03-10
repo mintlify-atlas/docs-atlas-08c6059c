@@ -1,0 +1,379 @@
+---
+title: Tech Stack
+description: Comprehensive overview of all technologies, frameworks, and dependencies used in OmniSearches
+---
+
+## Overview
+
+OmniSearches is built with modern, production-ready technologies focused on developer experience and performance. The stack emphasizes TypeScript for type safety, React for UI, and Express.js for the backend.
+
+## Frontend Stack
+
+### Core Framework
+
+<CardGroup cols={2}>
+  <Card title="React 18.3.1" icon="react" href="https://react.dev">
+    Modern React with concurrent features, hooks, and Strict Mode
+  </Card>
+  <Card title="TypeScript 5.6.3" icon="code" href="https://www.typescriptlang.org">
+    Type-safe JavaScript for better developer experience
+  </Card>
+</CardGroup>
+
+### Build Tools
+
+| Tool | Version | Purpose |
+|------|---------|----------|
+| **Vite** | 5.4.9 | Fast build tool with HMR and optimized production builds |
+| **PostCSS** | 8.4.47 | CSS processing and transformation |
+| **Autoprefixer** | 10.4.20 | Automatic vendor prefix addition |
+| **esbuild** | 0.25.0 | Ultra-fast JavaScript bundler for backend |
+
+### UI Framework
+
+**Tailwind CSS 3.4.14**
+- Utility-first CSS framework
+- Custom configuration in `tailwind.config.ts`
+- Plugins:
+  - `@tailwindcss/typography` - Beautiful typographic defaults
+  - `tailwindcss-animate` - Animation utilities
+
+**shadcn/ui**
+- Component library built on Radix UI primitives
+- Fully customizable and accessible
+- 40+ pre-built components in `client/src/components/ui/`
+
+### Radix UI Primitives
+
+Complete set of accessible, unstyled UI components:
+
+```typescript
+// Full list from package.json
+@radix-ui/react-accordion
+@radix-ui/react-alert-dialog
+@radix-ui/react-avatar
+@radix-ui/react-checkbox
+@radix-ui/react-collapsible
+@radix-ui/react-context-menu
+@radix-ui/react-dialog
+@radix-ui/react-dropdown-menu
+@radix-ui/react-hover-card
+@radix-ui/react-label
+@radix-ui/react-menubar
+@radix-ui/react-navigation-menu
+@radix-ui/react-popover
+@radix-ui/react-progress
+@radix-ui/react-radio-group
+@radix-ui/react-scroll-area
+@radix-ui/react-select
+@radix-ui/react-separator
+@radix-ui/react-slider
+@radix-ui/react-switch
+@radix-ui/react-tabs
+@radix-ui/react-toast
+@radix-ui/react-toggle
+@radix-ui/react-tooltip
+```
+
+### State Management
+
+**Zustand 5.0.3**
+- Lightweight state management
+- Zero boilerplate
+- Used for image upload state and UI state
+- Store files:
+  - `client/src/store/imageStore.ts`
+  - `client/src/store/reviewImageStore.ts`
+
+**TanStack Query 5.60.5**
+- Server state management
+- Automatic caching and background updates
+- Request deduplication
+- Configured in `client/src/lib/queryClient.ts`
+
+### Routing
+
+**Wouter 3.3.5**
+- Minimalist routing library (1.3KB)
+- Hook-based API
+- Pattern matching
+- Used in `client/src/App.tsx`
+
+### Internationalization
+
+| Package | Version | Purpose |
+|---------|---------|----------|
+| **i18next** | 24.2.2 | i18n framework |
+| **react-i18next** | 15.4.1 | React bindings |
+| **i18next-browser-languagedetector** | 8.0.4 | Auto language detection |
+| **i18next-http-backend** | 3.0.2 | Load translations via HTTP |
+
+Translation files located in `client/public/locales/`
+
+### UI Enhancement Libraries
+
+**Animation & Motion**
+- **Framer Motion** 11.13.1 - Production-ready animations
+- **embla-carousel-react** 8.3.0 - Lightweight carousel
+
+**Form Management**
+- **react-hook-form** 7.53.1 - Performant form validation
+- **@hookform/resolvers** 3.9.1 - Schema validation resolvers
+- **zod** 3.23.8 - TypeScript-first schema validation
+
+**Content Rendering**
+- **react-markdown** 9.0.3 - Markdown rendering
+- **marked** 15.0.4 - Markdown parser (server-side)
+
+**Media Handling**
+- **react-dropzone** 14.3.5 - File upload with drag & drop
+- **input-otp** 1.2.4 - OTP input component
+
+**Data Visualization**
+- **recharts** 2.13.0 - React chart library
+
+**Icons**
+- **lucide-react** 0.453.0 - Beautiful icon set
+- **react-icons** 5.4.0 - Popular icon libraries
+
+**Utilities**
+- **clsx** 2.1.1 - Conditional className utility
+- **tailwind-merge** 2.5.4 - Merge Tailwind classes intelligently
+- **class-variance-authority** 0.7.0 - Variant-based styling
+- **cmdk** 1.0.0 - Command menu component
+- **date-fns** 3.6.0 - Date utility library
+- **vaul** 1.1.0 - Drawer component
+- **react-resizable-panels** 2.1.4 - Resizable panel layouts
+
+## Backend Stack
+
+### Core Framework
+
+**Express.js 4.21.2**
+- Fast, minimalist web framework
+- Middleware-based architecture
+- RESTful API design
+- Entry point: `server/index.ts`
+
+**Node.js** (v18+ recommended)
+- JavaScript runtime
+- ES Module support (`"type": "module"`)
+
+### TypeScript Runtime
+
+**tsx 4.19.1**
+- TypeScript execution for development
+- No build step needed during development
+- Used in `npm run dev` script
+
+### AI & ML Integration
+
+**Google Generative AI SDK 0.21.0**
+- Official Gemini API client
+- Supports chat sessions
+- Google Search tool integration
+- Used in `server/routes.ts`
+
+**OpenAI SDK 4.85.2**
+- Compatible with OpenRouter API
+- Used for Deepseek reasoning model
+- Streaming support via Server-Sent Events
+
+### HTTP Client
+
+**Axios 1.7.9**
+- Promise-based HTTP client
+- Used for IP address fetching
+- Request/response interceptors
+
+### Session Management
+
+**express-session 1.18.1**
+- Session middleware for Express
+- Cookie-based sessions
+
+**memorystore 1.6.7**
+- Memory-based session store
+- Used for development/simple deployments
+
+### Authentication
+
+**Passport.js 0.7.0**
+- Authentication middleware
+- Modular strategy system
+
+**passport-local 1.0.0**
+- Local authentication strategy
+- Username/password authentication
+
+### Database
+
+**Drizzle ORM 0.38.2**
+- TypeScript ORM for SQL databases
+- Type-safe queries
+- Schema in `db/schema.ts`
+
+**Drizzle Kit 0.27.1**
+- Database migration tool
+- Schema introspection
+- Push/pull database changes
+
+**drizzle-zod 0.6.0**
+- Zod schema generation from Drizzle schemas
+
+**PostgreSQL** (configured)
+- Primary database
+- Connection via `DATABASE_URL` environment variable
+
+### WebSocket Support
+
+**ws 8.18.0**
+- WebSocket implementation
+- Real-time communication capability
+
+**bufferutil 4.0.8** (optional)
+- Performance boost for ws
+
+### Environment Management
+
+**dotenv 16.4.7**
+- Load environment variables from `.env`
+- Used in `server/env.ts`
+
+## Development Tools
+
+### TypeScript
+
+**Type Definitions**
+```json
+"@types/express": "4.17.21"
+"@types/express-session": "^1.18.0"
+"@types/node": "20.16.11"
+"@types/passport": "^1.0.16"
+"@types/passport-local": "^1.0.38"
+"@types/react": "^18.3.11"
+"@types/react-dom": "^18.3.1"
+"@types/ws": "^8.5.13"
+```
+
+**Configuration**
+- `tsconfig.json` - Main TypeScript config
+- Strict mode enabled
+- Path aliases: `@/*` for client, `@db/*` for database
+- ES Modules with bundler resolution
+
+### Vite Plugins
+
+**@vitejs/plugin-react 4.3.2**
+- React Fast Refresh
+- JSX transformation
+
+**@replit/vite-plugin-shadcn-theme-json 0.0.4**
+- Theme JSON integration
+- CSS variable generation
+
+**@replit/vite-plugin-runtime-error-modal 0.0.3**
+- Better error display during development
+
+## NPM Scripts
+
+Defined in `package.json:6`:
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `tsx server/index.ts` | Start development server (port 3000) |
+| `build` | `npm install && vite build && esbuild server/index.ts...` | Full production build |
+| `start` | `NODE_ENV=production node dist/index.js` | Run production server |
+| `check` | `tsc` | TypeScript type checking |
+| `db:push` | `drizzle-kit push` | Push database schema changes |
+| `frontend:build` | `vite build` | Build frontend only |
+| `frontend:serve` | `vite preview` | Preview production build |
+| `frontend:start` | `vite` | Start Vite dev server only |
+| `backend:start` | `NODE_ENV=production node dist/index.js` | Start backend only |
+
+## External APIs
+
+### Required APIs
+
+**Google Gemini 2.0 Flash**
+- Provider: Google AI Studio
+- Environment variable: `GOOGLE_API_KEY`
+- Features: Search grounding, chat sessions, multimodal input
+- Documentation: https://ai.google.dev/
+
+**OpenRouter Deepseek**
+- Provider: OpenRouter
+- Environment variables:
+  - `REASON_MODEL_API_KEY`
+  - `REASON_MODEL_API_URL` (default: https://openrouter.ai/api/v1)
+  - `REASON_MODEL` (default: deepseek/deepseek-r1-distill-llama-70b:free)
+- Documentation: https://openrouter.ai/
+
+### Optional APIs
+
+**Wikimedia Commons**
+- Image search functionality
+- No API key required
+- Used in `client/src/lib/ImageUtils.ts`
+
+**Google Search**
+- Integrated via Gemini's `google_search` tool
+- Automatic web grounding
+- No separate API key needed
+
+## Environment Variables
+
+Required variables in `.env`:
+
+```bash
+# Required
+GOOGLE_API_KEY=your_google_api_key
+REASON_MODEL_API_KEY=your_openrouter_api_key
+
+# Optional
+REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+NODE_ENV=development
+PORT=3000
+
+# Database (optional)
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+## Browser Support
+
+Modern browsers with:
+- ES2020+ support
+- CSS Grid and Flexbox
+- CSS Custom Properties
+- Fetch API
+- WebSocket support (optional)
+
+Recommended:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+
+## Performance Metrics
+
+**Bundle Sizes** (approximate):
+- Vendor chunk: ~300KB (gzipped)
+- Main chunk: ~50KB (gzipped)
+- Total initial load: ~350KB
+
+**Key Performance Features**:
+- Code splitting by route
+- Tree-shaking for unused code
+- Optimized Radix UI imports
+- Lazy loading of heavy components
+- TanStack Query caching
+
+## Version Control
+
+**Git Configuration**
+- `.gitignore` includes: node_modules, dist, .env, build artifacts
+- `.gitattributes` for consistent line endings
+
+## License
+
+MIT License - Open source and freely available

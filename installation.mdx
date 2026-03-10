@@ -1,0 +1,568 @@
+---
+title: Installation
+description: Comprehensive installation guide for OmniSearches
+---
+
+This guide provides detailed instructions for installing and configuring OmniSearches, covering prerequisites, setup options, and advanced configuration.
+
+## System Requirements
+
+### Minimum Requirements
+
+- **Node.js**: v18.0.0 or higher (v20+ recommended)
+- **RAM**: 512 MB minimum, 1 GB recommended
+- **Disk Space**: 500 MB for dependencies and build artifacts
+- **Operating System**: Linux, macOS, or Windows with WSL2
+
+### Package Manager
+
+OmniSearches uses **npm** as its primary package manager. While other managers may work, npm is officially supported and tested.
+
+<Note>
+You can check your Node.js and npm versions:
+```bash
+node --version
+npm --version
+```
+</Note>
+
+## API Keys Setup
+
+OmniSearches requires two free API keys to function:
+
+### Google Gemini API Key
+
+<Steps>
+  <Step title="Visit Google AI Studio">
+    Navigate to [Google AI Studio](https://ai.google.dev/) and sign in with your Google account.
+  </Step>
+
+  <Step title="Create API Key">
+    Click "Get API Key" and create a new key for your project. The free tier includes generous limits:
+    - 15 requests per minute
+    - 1 million tokens per minute
+    - 1,500 requests per day
+  </Step>
+
+  <Step title="Copy the key">
+    Save your API key securely. You'll need it for the `GOOGLE_API_KEY` environment variable.
+  </Step>
+</Steps>
+
+### OpenRouter API Key
+
+<Steps>
+  <Step title="Visit OpenRouter">
+    Go to [OpenRouter](https://openrouter.ai/) and create a free account.
+  </Step>
+
+  <Step title="Generate key">
+    Navigate to the API Keys section and create a new key. OpenRouter provides free access to Deepseek R1 Distill Llama 70B.
+  </Step>
+
+  <Step title="Copy the key">
+    Save this key for the `REASON_MODEL_API_KEY` environment variable.
+  </Step>
+</Steps>
+
+<Warning>
+Keep your API keys confidential. Never commit them to version control or share them publicly.
+</Warning>
+
+## Installation Methods
+
+### Method 1: Local Development (Recommended)
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/kiwigaze/OmniSearches.git
+    cd OmniSearches
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+
+    This installs:
+    - **Frontend**: React 18.3, Vite 5.4, TailwindCSS, shadcn/ui components
+    - **Backend**: Express 4.21, Google Generative AI SDK, OpenAI SDK
+    - **TypeScript**: Full type safety across the stack
+  </Step>
+
+  <Step title="Configure environment">
+    Create a `.env` file in the project root:
+
+    ```bash .env
+    # Required: Google Gemini API
+    GOOGLE_API_KEY=your_google_api_key_here
+
+    # Required: OpenRouter for reasoning mode
+    REASON_MODEL_API_KEY=your_openrouter_api_key_here
+    REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+    REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+
+    # Optional: Custom port (defaults to 3000)
+    PORT=3000
+
+    # Optional: Node environment (auto-detected)
+    NODE_ENV=development
+    ```
+  </Step>
+
+  <Step title="Start development server">
+    ```bash
+    npm run dev
+    ```
+
+    This command uses `tsx` to run the TypeScript server directly without compilation. The server includes:
+    - Hot module replacement (HMR) for frontend
+    - Automatic server restart on backend changes
+    - Full TypeScript support
+  </Step>
+
+  <Step title="Verify installation">
+    Open your browser to `http://localhost:3000` and perform a test search. Check the terminal for:
+
+    ```
+    --- Environment Setup Debug ---
+    Environment variables loaded: { GOOGLE_API_KEY: '***', ... }
+    --- End Debug ---
+    
+    serving on port 3000
+    ```
+  </Step>
+</Steps>
+
+### Method 2: Production Build
+
+For production deployment:
+
+<Steps>
+  <Step title="Complete local installation">
+    Follow Method 1 steps 1-3 above.
+  </Step>
+
+  <Step title="Build the application">
+    ```bash
+    npm run build
+    ```
+
+    This runs a multi-stage build:
+    1. Installs production dependencies
+    2. Builds the React frontend with Vite (output: `dist/public`)
+    3. Bundles the Express backend with esbuild (output: `dist/index.js`)
+
+    <Note>
+    The build process uses:
+    - **Vite** for frontend bundling with optimizations
+    - **esbuild** for fast backend compilation
+    - **ESM format** for modern JavaScript modules
+    </Note>
+  </Step>
+
+  <Step title="Configure production environment">
+    Update your `.env` file:
+
+    ```bash
+    NODE_ENV=production
+    GOOGLE_API_KEY=your_production_key
+    REASON_MODEL_API_KEY=your_production_key
+    REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+    REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+    ```
+  </Step>
+
+  <Step title="Start production server">
+    ```bash
+    npm start
+    ```
+
+    This runs the compiled application from the `dist` directory. The production server:
+    - Serves static assets directly (no Vite dev server)
+    - Uses optimized builds for better performance
+    - Runs on Node.js without development dependencies
+  </Step>
+</Steps>
+
+## Environment Variables Reference
+
+### Required Variables
+
+<ParamField path="GOOGLE_API_KEY" type="string" required>
+  Your Google API key with access to Gemini 2.0 Flash API. Get it from [Google AI Studio](https://ai.google.dev/).
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_KEY" type="string" required>
+  OpenRouter API key for Deepseek reasoning model. Obtain from [OpenRouter](https://openrouter.ai/).
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_URL" type="string" required>
+  OpenRouter API base URL. Default: `https://openrouter.ai/api/v1`
+</ParamField>
+
+<ParamField path="REASON_MODEL" type="string" required>
+  Reasoning model identifier. Default: `deepseek/deepseek-r1-distill-llama-70b:free`
+</ParamField>
+
+### Optional Variables
+
+<ParamField path="PORT" type="number" default="3000">
+  Port number for the HTTP server. The application will listen on `0.0.0.0:[PORT]`.
+</ParamField>
+
+<ParamField path="NODE_ENV" type="string" default="development">
+  Environment mode. Values: `development` or `production`. Affects:
+  - Vite dev server vs static serving
+  - Logging verbosity
+  - Error handling detail
+</ParamField>
+
+## Project Structure
+
+Understanding the project layout:
+
+```
+OmniSearches/
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── pages/         # Home and Search pages
+│   │   ├── components/    # React components (shadcn/ui)
+│   │   ├── lib/           # Utility functions
+│   │   ├── contexts/      # React contexts (Language)
+│   │   └── i18n/          # Internationalization
+│   └── index.html         # Entry HTML
+├── server/                # Backend Express application
+│   ├── index.ts           # Main server file
+│   ├── routes.ts          # API route handlers
+│   ├── env.ts             # Environment setup
+│   └── vite.ts            # Vite dev server integration
+├── dist/                  # Production build output
+│   ├── public/            # Built frontend assets
+│   └── index.js           # Compiled backend
+├── package.json           # Dependencies and scripts
+├── vite.config.ts         # Vite configuration
+├── tsconfig.json          # TypeScript configuration
+└── .env                   # Environment variables (create this)
+```
+
+## Available Scripts
+
+<CodeGroup>
+
+```bash Development
+# Start development server with hot reload
+npm run dev
+
+# TypeScript type checking
+npm run check
+```
+
+```bash Production
+# Full production build
+npm run build
+
+# Start production server
+npm start
+```
+
+```bash Frontend Only
+# Build frontend only
+npm run frontend:build
+
+# Preview frontend build
+npm run frontend:serve
+
+# Start frontend dev server
+npm run frontend:start
+```
+
+```bash Backend Only
+# Start backend in production mode
+npm run backend:start
+```
+
+</CodeGroup>
+
+## Technology Stack Details
+
+### Frontend Technologies
+
+- **React 18.3.1**: Modern React with hooks and concurrent features
+- **Vite 5.4.9**: Fast build tool and dev server
+- **TypeScript 5.6.3**: Type-safe JavaScript
+- **TailwindCSS 3.4**: Utility-first CSS framework
+- **shadcn/ui**: Beautiful, accessible component library
+- **Radix UI**: Unstyled, accessible component primitives
+- **Wouter**: Lightweight routing (3.3.5)
+- **React Query**: Data fetching and state management
+- **Framer Motion**: Animation library
+- **Lucide React**: Icon library
+- **React Markdown**: Render markdown responses
+
+### Backend Technologies
+
+- **Express.js 4.21.2**: Web framework
+- **TypeScript**: Type-safe server code
+- **Google Generative AI 0.21.0**: Gemini API SDK
+- **OpenAI SDK 4.85.2**: Compatible with OpenRouter
+- **tsx 4.19.1**: TypeScript execution for development
+- **esbuild 0.25.0**: Fast bundler for production
+- **dotenv 16.4.7**: Environment variable management
+- **Marked 15.0.4**: Markdown parsing
+- **Axios 1.7.9**: HTTP client
+
+## Verification & Testing
+
+### Test Development Setup
+
+<Steps>
+  <Step title="Check server logs">
+    After running `npm run dev`, verify you see:
+    ```
+    Environment variables loaded: { GOOGLE_API_KEY: '***', ... }
+    serving on port 3000
+    ```
+  </Step>
+
+  <Step title="Test API endpoints">
+    Open a new terminal and test the health endpoint:
+
+    ```bash
+    curl http://localhost:3000/api/server-ip
+    ```
+
+    You should receive a JSON response with an IP address.
+  </Step>
+
+  <Step title="Perform test search">
+    In your browser at `http://localhost:3000`:
+    1. Enter a simple query like "test"
+    2. Verify you receive AI-generated results
+    3. Check that sources appear with links
+    4. Confirm related questions are generated
+  </Step>
+
+  <Step title="Test reasoning mode">
+    1. Enable reasoning mode toggle
+    2. Enter a query
+    3. Verify streaming reasoning output appears
+    4. Confirm search results follow the reasoning
+  </Step>
+</Steps>
+
+### Test Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# In another terminal, test
+curl http://localhost:3000
+```
+
+You should receive the HTML for the built application.
+
+## Troubleshooting
+
+### Installation Issues
+
+<AccordionGroup>
+  <Accordion title="npm install fails with peer dependency errors">
+    Try using the legacy peer deps flag:
+
+    ```bash
+    npm install --legacy-peer-deps
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript compilation errors">
+    Ensure you're using TypeScript 5.6.3:
+
+    ```bash
+    npm list typescript
+    ```
+
+    If different, reinstall:
+    ```bash
+    npm install typescript@5.6.3 --save-dev
+    ```
+  </Accordion>
+
+  <Accordion title="Node version incompatibility">
+    Check your Node version:
+
+    ```bash
+    node --version
+    ```
+
+    If below v18, upgrade using [nvm](https://github.com/nvm-sh/nvm):
+    ```bash
+    nvm install 20
+    nvm use 20
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Runtime Issues
+
+<AccordionGroup>
+  <Accordion title="Environment variables not loading">
+    Verify your `.env` file:
+    1. Is it in the root directory (not `client/` or `server/`)?
+    2. Are there any extra spaces around the `=` signs?
+    3. Are values in quotes if they contain special characters?
+
+    Debug by checking server logs:
+    ```bash
+    npm run dev
+    # Look for "Environment variables loaded:" in output
+    ```
+  </Accordion>
+
+  <Accordion title="Google API authentication fails">
+    Common causes:
+    - API key is invalid or expired
+    - Gemini API is not enabled for your project
+    - Quota limits exceeded
+
+    Verify at [Google AI Studio](https://ai.google.dev/):
+    1. Check API key is active
+    2. Verify Gemini 2.0 Flash is enabled
+    3. Review usage quotas
+  </Accordion>
+
+  <Accordion title="OpenRouter/Deepseek errors">
+    Issues to check:
+    - API key format is correct
+    - Model identifier is exact: `deepseek/deepseek-r1-distill-llama-70b:free`
+    - API URL is correct: `https://openrouter.ai/api/v1`
+
+    Test your OpenRouter key:
+    ```bash
+    curl https://openrouter.ai/api/v1/auth/key \
+      -H "Authorization: Bearer $REASON_MODEL_API_KEY"
+    ```
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    Find and kill the process using port 3000:
+
+    **Linux/macOS:**
+    ```bash
+    lsof -ti:3000 | xargs kill -9
+    ```
+
+    **Windows:**
+    ```bash
+    netstat -ano | findstr :3000
+    taskkill /PID <PID> /F
+    ```
+
+    Or use a different port:
+    ```bash
+    PORT=3001 npm run dev
+    ```
+  </Accordion>
+
+  <Accordion title="Build fails with memory errors">
+    Increase Node.js memory limit:
+
+    ```bash
+    NODE_OPTIONS="--max-old-space-size=4096" npm run build
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Performance Issues
+
+<AccordionGroup>
+  <Accordion title="Slow search responses">
+    Factors affecting speed:
+    - Network latency to Google/OpenRouter APIs
+    - Search mode (Exhaustive is slower than Concise)
+    - Reasoning mode adds overhead
+
+    Optimize by:
+    - Using Concise mode for simple queries
+    - Disabling reasoning for faster results
+    - Checking your internet connection
+  </Accordion>
+
+  <Accordion title="High memory usage in development">
+    Development mode uses more memory due to:
+    - Vite dev server with HMR
+    - Source maps
+    - Development dependencies
+
+    For production, use:
+    ```bash
+    npm run build && npm start
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Security Best Practices
+
+<Warning>
+Follow these security guidelines to protect your API keys and application:
+</Warning>
+
+### API Key Protection
+
+1. **Never commit `.env` files**
+   - Already configured in `.gitignore`
+   - Use environment variables in production
+
+2. **Use different keys for development and production**
+   - Create separate API keys for each environment
+   - Rotate keys periodically
+
+3. **Implement rate limiting in production**
+   - Add Express rate limiting middleware
+   - Monitor API usage quotas
+
+### Production Hardening
+
+```javascript
+// Example: Add rate limiting (install express-rate-limit)
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/', limiter);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Guide" icon="sitemap" href="/development/architecture">
+    Understand how OmniSearches works internally
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the REST API endpoints and responses
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/environment-variables">
+    Advanced configuration and customization
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/configuration/deployment">
+    Deploy to Railway, Vercel, or your own infrastructure
+  </Card>
+</CardGroup>
+
+## Getting Help
+
+If you need assistance:
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/kiwigaze/OmniSearches/issues)
+- **Discussions**: Join the community on GitHub Discussions
+- **Documentation**: Browse other sections of this documentation
+- **Source Code**: Review the source at [github.com/kiwigaze/OmniSearches](https://github.com/kiwigaze/OmniSearches)

@@ -1,0 +1,193 @@
+---
+title: "Environment Variables"
+description: "Configure OmniSearches with environment variables for API keys and model settings"
+---
+
+## Overview
+
+OmniSearches uses environment variables to configure API keys and settings. Environment variables are loaded from a `.env` file in development mode and should be set directly in your hosting platform for production deployments.
+
+<Warning>
+  **Security Notice**: Never commit your `.env` file or expose API keys in public repositories. The `.gitignore` file is configured to exclude sensitive files by default.
+</Warning>
+
+## Required Variables
+
+These environment variables are required for OmniSearches to function properly. The application will fail to start if any of these are missing.
+
+<ParamField path="GOOGLE_API_KEY" type="string" required>
+  Your Google API key with access to the Gemini API. This is used for the main AI-powered search functionality.
+  
+  **How to obtain:**
+  1. Visit [Google AI Studio](https://ai.google.dev/)
+  2. Create a new API key
+  3. Ensure the key has access to Gemini 2.0 Flash API
+  
+  ```bash
+  GOOGLE_API_KEY=AIzaSyD...
+  ```
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_KEY" type="string" required>
+  Your OpenRouter API key with access to the Deepseek reasoning model. This powers the advanced reasoning mode.
+  
+  **How to obtain:**
+  1. Visit [OpenRouter](https://openrouter.ai/)
+  2. Create an account and generate an API key
+  3. Ensure access to Deepseek distilled llama 70b API
+  
+  ```bash
+  REASON_MODEL_API_KEY=sk-or-v1-...
+  ```
+</ParamField>
+
+<ParamField path="REASON_MODEL_API_URL" type="string" required>
+  The base URL for the OpenRouter API endpoint. This should be set to the OpenRouter API URL.
+  
+  **Default value:**
+  ```bash
+  REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+  ```
+</ParamField>
+
+## Optional Variables
+
+These environment variables are optional and have default values if not specified.
+
+<ParamField path="REASON_MODEL" type="string">
+  The specific model name to use for reasoning operations. Defaults to the Deepseek R1 distilled llama 70b model.
+  
+  **Default value:**
+  ```bash
+  REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+  ```
+  
+  **Other options:**
+  - Any OpenRouter-compatible model endpoint
+  - Check [OpenRouter Models](https://openrouter.ai/models) for available options
+</ParamField>
+
+<ParamField path="NODE_ENV" type="string">
+  The environment mode for the application. Affects logging, error handling, and whether `.env` files are loaded.
+  
+  **Possible values:**
+  - `development` (default) - Loads `.env` file, enables debug logging
+  - `production` - Expects environment variables from hosting platform
+  
+  ```bash
+  NODE_ENV=production
+  ```
+</ParamField>
+
+<ParamField path="DEEPSEEK_API_KEY" type="string">
+  Legacy/alternative API key for Deepseek. This is currently defined in the environment setup but may be used for direct Deepseek API access.
+  
+  ```bash
+  DEEPSEEK_API_KEY=your_key_here
+  ```
+</ParamField>
+
+## Setting Up Environment Variables
+
+### Local Development
+
+1. Create a `.env` file in the root directory of your project:
+
+```bash
+touch .env
+```
+
+2. Add your environment variables:
+
+```bash .env
+GOOGLE_API_KEY=your_google_api_key_here
+REASON_MODEL_API_KEY=your_openrouter_api_key_here
+REASON_MODEL_API_URL=https://openrouter.ai/api/v1
+REASON_MODEL=deepseek/deepseek-r1-distill-llama-70b:free
+NODE_ENV=development
+```
+
+3. The `.env` file will be automatically loaded when you run the development server:
+
+```bash
+npm run dev
+```
+
+<Tip>
+  The `.env` file is only loaded in development mode. In production, set environment variables directly in your hosting platform.
+</Tip>
+
+### Production Deployment
+
+For production deployments, set environment variables directly in your hosting platform:
+
+- **Railway**: Set variables in the Variables tab of your project
+- **Vercel**: Configure in Project Settings → Environment Variables
+- **Heroku**: Use `heroku config:set VARIABLE_NAME=value`
+- **Docker**: Pass variables with `-e` flag or use a `.env` file with `--env-file`
+
+<Warning>
+  In production (`NODE_ENV=production`), the application does NOT load `.env` files. All variables must be set in your hosting environment.
+</Warning>
+
+## Environment Variable Validation
+
+The application validates required environment variables at startup. If any required variables are missing, the application will throw an error:
+
+```
+Error: Missing required environment variables: GOOGLE_API_KEY, REASON_MODEL_API_KEY
+```
+
+This validation is performed in `server/env.ts:19-28` to ensure all necessary configuration is present before the application starts.
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Never Commit API Keys" icon="lock">
+    Always keep your `.env` file in `.gitignore`. Never commit API keys to version control.
+  </Card>
+  
+  <Card title="Use Separate Keys" icon="key">
+    Use different API keys for development and production environments.
+  </Card>
+  
+  <Card title="Rotate Keys Regularly" icon="arrows-rotate">
+    Periodically rotate your API keys, especially if they may have been exposed.
+  </Card>
+  
+  <Card title="Monitor Usage" icon="chart-line">
+    Track your API usage in the Google Cloud Console and OpenRouter dashboard.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Variables Not Loading
+
+If your environment variables aren't being loaded:
+
+1. Check that your `.env` file is in the root directory (same level as `package.json`)
+2. Verify `NODE_ENV` is not set to `production` in development
+3. Restart your development server after changing `.env` values
+4. Check for syntax errors in your `.env` file (no quotes, no spaces around `=`)
+
+### Missing Variable Errors
+
+If you see "Missing required environment variables" errors:
+
+1. Verify all required variables are set in your `.env` file or hosting platform
+2. Check for typos in variable names (they are case-sensitive)
+3. Ensure no trailing spaces in variable values
+
+### API Key Issues
+
+If you're experiencing API authentication errors:
+
+1. Verify your API keys are valid and active
+2. Check that your Google API key has Gemini API access enabled
+3. Ensure your OpenRouter account has sufficient credits
+4. Confirm the API URLs are correct and accessible
+
+<Note>
+  Need help with environment variables? Check the [deployment guide](/configuration/deployment) or consult the [official documentation](https://github.com/kiwigaze/OmniSearches).
+</Note>
