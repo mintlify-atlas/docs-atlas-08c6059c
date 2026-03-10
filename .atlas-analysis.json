@@ -1,0 +1,79 @@
+{
+  "projectType": "saas",
+  "projectName": "OmniSearches",
+  "projectDescription": "A free, open-source AI search engine powered by Gemini 2.0 Flash and Deepseek with real-time web sources and intelligent reasoning.",
+  "theme": "palm",
+  "primaryColor": "#6366f1",
+  "lightColor": "#818cf8",
+  "darkColor": "#4f46e5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/search-modes",
+              "features/image-search",
+              "features/reasoning-mode",
+              "features/related-questions"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/deployment"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/architecture",
+              "development/tech-stack",
+              "development/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/overview",
+              "api/search",
+              "api/reasoning",
+              "api/follow-up"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time web search with Google Search integration",
+    "Multiple search modes: concise, default, exhaustive, and reasoning",
+    "AI-powered answers with source citations",
+    "Image search via Wikimedia Commons",
+    "Advanced reasoning powered by Deepseek model",
+    "Related questions generation",
+    "Follow-up conversation support"
+  ],
+  "publicApiSurface": [
+    "GET /api/search - Perform AI-powered search with grounding",
+    "POST /api/search - Search with reasoning and image support",
+    "GET /api/reasoning - Generate reasoning analysis for queries",
+    "POST /api/follow-up - Continue conversation in existing session"
+  ]
+}
